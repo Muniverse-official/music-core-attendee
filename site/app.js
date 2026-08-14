@@ -7,6 +7,7 @@
   const API = 'https://tcxugltvmatbgsmcepso.supabase.co/functions/v1/music-core-attendee';
   const $ = (id) => document.getElementById(id);
   const state = { token: '', accountEmail: '', nickname: '', eventDate: '' };
+  const TEST_MODE = true;
   const previewStep = new URLSearchParams(location.search).get('preview');
   const lang = () => (window.MC_COPY[$('lang').value] ? $('lang').value : 'en');
   const t = (key) => window.MC_COPY[lang()][key];
@@ -120,6 +121,19 @@
       return;
     }
 
+    if (TEST_MODE) {
+      state.accountEmail = email;
+      state.nickname = nickname;
+      state.eventDate = 'TEST MODE';
+      $('contactEmail').value = email;
+      setText('eventDate', state.eventDate);
+      $('step1').classList.add('hidden');
+      $('step2').classList.remove('hidden');
+      setStep(2);
+      $('step2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
     busy($('verifyBtn'), true);
     try {
       const { r, data } = await call('verify', { email, nickname, privacy_consent: true });
@@ -151,6 +165,15 @@
 
     if (previewStep === 'step2') {
       message.textContent = '디자인 확인용 미리보기에서는 정보가 제출되지 않습니다.';
+      return;
+    }
+
+    if (TEST_MODE) {
+      setText('doneEventDate', 'TEST MODE');
+      $('step2').classList.add('hidden');
+      $('done').classList.remove('hidden');
+      setStep(3);
+      $('done').scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
 
@@ -225,6 +248,25 @@
     $('step2').insertBefore(note, $('step2').children[1]);
   }
 
+  function showTestMode() {
+    if (!TEST_MODE || previewStep === 'step2') return;
+    const note = document.createElement('p');
+    note.textContent = 'TEST MODE · 입력 정보는 당첨자 명단과 대조하거나 저장하지 않습니다.';
+    Object.assign(note.style, {
+      margin: '0 0 24px',
+      padding: '12px 16px',
+      border: '1px solid #f0d98b',
+      borderRadius: '10px',
+      background: '#fff9df',
+      color: '#725b12',
+      fontSize: '13px',
+      fontWeight: '700',
+      lineHeight: '1.55',
+      textAlign: 'center',
+    });
+    $('step1').insertBefore(note, $('step1').children[0]);
+  }
+
   $('lang').addEventListener('change', applyLanguage);
   $('consent').addEventListener('change', verifyReady);
   $('email').addEventListener('input', verifyReady);
@@ -233,5 +275,6 @@
   $('submitBtn').addEventListener('click', submit);
   applyLanguage();
   verifyReady();
+  showTestMode();
   showPreview();
 })();
