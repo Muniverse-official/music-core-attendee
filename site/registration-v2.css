@@ -1,0 +1,28 @@
+/* Unified attendee form and requested hero refinements */
+.honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important}
+.hero-copy{text-align:center!important}
+.hero h1{line-height:1.13!important}
+.hero h1 em{display:block;margin-top:9px}
+.hero-copy>p{max-width:620px!important;margin:24px auto 0!important;text-align:center!important}
+.hero-spark{display:none!important}
+.choice-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px}
+.choice-card{display:flex;align-items:center;gap:9px;min-height:50px;margin:0;padding:12px 13px;border:1px solid #d5deea;border-radius:12px;background:#f8fbff;cursor:pointer;font-size:13px;line-height:1.35}
+.choice-card:has(input:checked){border-color:#78aef3;background:#edf6ff;box-shadow:0 0 0 2px rgba(67,133,221,.08)}
+.choice-card input{width:18px;height:18px;flex:0 0 18px;margin:0;padding:0;accent-color:var(--mc-pink)}
+.choice-card span{font-weight:750;color:#25364f}
+.sub-field{margin-top:10px}
+.sub-field label{font-size:12px;color:#677286}
+.sub-field select,.sub-field input{width:100%}
+.full-span{grid-column:1/-1}
+.privacy-grid{display:block!important;margin:0!important}
+.privacy-grid>div{display:grid;grid-template-columns:150px 1fr;gap:14px;border-top:1px solid #e2e8f0}
+.privacy-grid>div:first-child{border-top:0}
+.privacy-grid dt{padding:14px 0!important;border:0!important;color:#27364c;font-size:13px;font-weight:800}
+.privacy-grid dd{padding:14px 0!important;border:0!important;margin:0;color:#526077;font-size:13px;line-height:1.65;word-break:keep-all}
+.preview-notice{margin:0 0 22px;padding:12px 15px;border:1px solid #cfe0f3;border-radius:11px;background:#f2f7fd;color:#496176;font-size:13px;line-height:1.55;text-align:center}
+.already-panel{text-align:center;padding-block:52px!important}
+.already-panel strong{display:block;color:#1f2d43;font-size:22px;line-height:1.55;word-break:keep-all}
+.already-state .hero-inner{display:none!important}
+.already-state .hero{min-height:190px!important}
+.already-state footer{display:none!important}
+@media(max-width:720px){.hero-copy,.hero-copy>p{text-align:center!important}.eyebrow{justify-content:center!important}.hero h1 em{margin-top:7px}.choice-row{grid-template-columns:1fr}.privacy-grid>div{grid-template-columns:1fr;gap:0}.privacy-grid dt{padding:13px 0 3px!important}.privacy-grid dd{padding:0 0 13px!important}.full-span{grid-column:auto}}

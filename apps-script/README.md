@@ -1,13 +1,30 @@
-# Muniverse attendee dispatcher
+# Muniverse attendee dispatcher (Apps Script v5)
 
-This Apps Script keeps the existing COVER PICK webhook compatible and adds the Music Core monthly spreadsheet flow.
+This Apps Script receives signed webhooks from the Supabase Edge Functions and writes completed attendee registrations to Google Sheets.
 
-## Deployment
+## Script Properties
 
-1. Replace the current Web App project code with `Code.gs`.
-2. Keep the existing `WEBHOOK_TOKEN` Script Property unchanged.
-3. Optionally set `MUSIC_CORE_FOLDER_ID` to the Drive folder that should contain the monthly spreadsheets.
-4. Deploy a new Web App version to the existing deployment URL.
-5. Set the same token in the Supabase Edge Function secret named `MUSIC_CORE_WEBHOOK_TOKEN`.
+Required:
 
-Requests without `kind` continue to use `cover_pick`, so the current COVER PICK Edge Function remains backward-compatible. Music Core requests use `kind=music_core` and deduplicate rows with `idempotency_key`.
+- `WEBHOOK_TOKEN`: shared webhook secret. Use the same value as the relevant Supabase function secret.
+
+Recommended:
+
+- `NOTIFY_EMAIL`: email address that receives the Google Sheet link when the first attendee submits. Defaults to `support@muniverse.io` when omitted.
+- `FANS_PICK_SHEET_ID`: existing FANS PICK Google Sheet ID. When omitted, the script reuses the legacy sheet when accessible or creates a new sheet.
+- `FANS_PICK_FOLDER_ID`: destination folder for a newly created FANS PICK sheet.
+- `MUSIC_CORE_FOLDER_ID`: destination folder for newly created Music Core sheets.
+
+## Behavior
+
+- Accepts `fans_pick`, legacy `cover_pick`, and `music_core` webhook kinds.
+- Prevents replay with a timestamp and one-time nonce.
+- Uses an idempotency key so the same registration is not appended twice.
+- Sends the sheet link only once, when registration begins for that FANS PICK sheet or Music Core recording date.
+- User-facing sheet and email labels use **FANS PICK**.
+
+After updating `Code.gs`, deploy a new web-app version and keep the web-app URL in the Supabase `ATTENDEE_APPS_SCRIPT_URL` secret when it differs from the current default.
+
+## Post-event deletion
+
+After attendee verification and final guidance are complete, run `purgeFansPickData()` or `purgeMusicCoreEvent('YYYY-MM-DD')` in Apps Script to clear Google Sheet rows. Purge the corresponding Supabase rows with `tools/purge_attendee_data.py` in the relevant repository.
