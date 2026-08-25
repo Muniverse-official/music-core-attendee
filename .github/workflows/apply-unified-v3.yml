@@ -1,0 +1,22 @@
+name: Apply unified attendee v3
+
+on:
+  push:
+    branches: [feat/unified-attendee-v3-20260825]
+    paths:
+      - tools/apply_unified_v3.py
+      - .github/workflows/apply-unified-v3.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feat/unified-attendee-v3-20260825
+      - name: Apply generated update
+        run: python tools/apply_unified_v3.py
