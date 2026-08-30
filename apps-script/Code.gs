@@ -1,5 +1,5 @@
 var CONFIG = {
-  VERSION: 5,
+  VERSION: 6,
   TOKEN_PROPERTY: 'WEBHOOK_TOKEN',
   NOTIFY_EMAIL_PROPERTY: 'NOTIFY_EMAIL',
   FANS_PICK_SHEET_ID_PROPERTY: 'FANS_PICK_SHEET_ID',
@@ -138,7 +138,6 @@ function handleFansPick_(payload) {
     throw new Error('INVALID_AGE');
   }
 
-  var wasEmpty = sheet.getLastRow() <= 1;
   sheet.appendRow([
     clean_(payload.muniverse_nickname, 80),
     clean_(payload.account_email, 254),
@@ -153,20 +152,14 @@ function handleFansPick_(payload) {
   ]);
   sheet.hideColumns(9);
 
-  var emailSent = false;
-  if (wasEmpty) {
-    emailSent = notifyOnce_(
-      'fans_pick_' + spreadsheet.getId(),
-      'FANS PICK 방청자 명단 생성',
-      'FANS PICK 방청자 정보 입력이 시작되었습니다.',
-      spreadsheet.getUrl()
-    );
-  }
+  var attendeeNumber = Math.max(1, sheet.getLastRow() - 1);
+  var emailSent = notifyFansPickSubmission_(attendeeNumber, spreadsheet.getUrl(), payload);
 
   return {
     sheetUpdated: true,
     emailSent: emailSent,
     duplicate: false,
+    attendeeNumber: attendeeNumber,
     spreadsheetUrl: spreadsheet.getUrl()
   };
 }
@@ -383,6 +376,20 @@ function buildFallbackIdempotencyKey_(payload) {
   return 'fans_pick:' + sha256Hex_(
     clean_(payload.account_email, 254).toLowerCase() + '\n' + clean_(payload.muniverse_nickname, 80)
   );
+}
+
+function notifyFansPickSubmission_(attendeeNumber, spreadsheetUrl, payload) {
+  var properties = PropertiesService.getScriptProperties();
+  var email = clean_(properties.getProperty(CONFIG.NOTIFY_EMAIL_PROPERTY), 254) || CONFIG.DEFAULT_NOTIFY_EMAIL;
+  var subject = attendeeNumber + '번째 당첨자 개인정보 입력';
+  var message = [
+    'FANS PICK ' + attendeeNumber + '번째 당첨자가 개인정보 입력을 완료했습니다.',
+    '',
+    'Muniverse 닉네임: ' + clean_(payload.muniverse_nickname, 80),
+    '방청자 명단: ' + spreadsheetUrl
+  ].join('\n');
+  MailApp.sendEmail(email, subject, message);
+  return true;
 }
 
 function notifyOnce_(notificationKey, subject, message, spreadsheetUrl) {
