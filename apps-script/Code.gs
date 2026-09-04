@@ -1,11 +1,13 @@
 var CONFIG = {
-  VERSION: 6,
+  VERSION: 7,
   TOKEN_PROPERTY: 'WEBHOOK_TOKEN',
   NOTIFY_EMAIL_PROPERTY: 'NOTIFY_EMAIL',
   FANS_PICK_SHEET_ID_PROPERTY: 'FANS_PICK_SHEET_ID',
   LEGACY_FANS_PICK_SHEET_ID: '1GsFyGTLeJV62T9xsfFyvsxOljRy3Egr7MkahpttlrPs',
   FANS_PICK_FOLDER_PROPERTY: 'FANS_PICK_FOLDER_ID',
   MUSIC_CORE_FOLDER_PROPERTY: 'MUSIC_CORE_FOLDER_ID',
+  MUSIC_CORE_SHEET_ID: '191598ZPdnCdDlvoa8aFGGNPmT1_xqEZXOq7vvEEahp0',
+  MUSIC_CORE_SHEET_NAME: '방청자 등록',
   DEFAULT_NOTIFY_EMAIL: 'support@muniverse.io',
   MAX_CLOCK_SKEW_MS: 5 * 60 * 1000,
   NONCE_TTL_SECONDS: 10 * 60,
@@ -170,8 +172,10 @@ function handleMusicCore_(payload) {
     'muniverse_nickname',
     'account_email',
     'name',
+    'birth_date',
     'nationality',
     'phone',
+    'x_account',
     'contact_email',
     'idempotency_key'
   ]);
@@ -182,10 +186,10 @@ function handleMusicCore_(payload) {
   }
 
   var idempotencyKey = clean_(payload.idempotency_key, 160);
-  var spreadsheet = getOrCreateMusicCoreSpreadsheet_(eventDate);
-  var sheet = getOrCreateMusicCoreEventSheet_(spreadsheet, eventDate);
+  var spreadsheet = getMusicCoreSpreadsheet_();
+  var sheet = getMusicCoreSheet_(spreadsheet);
 
-  if (hasIdempotencyKey_(sheet, idempotencyKey, 8)) {
+  if (hasIdempotencyKey_(sheet, idempotencyKey, 11)) {
     return {
       sheetUpdated: true,
       emailSent: false,
@@ -202,34 +206,30 @@ function handleMusicCore_(payload) {
     throw new Error('INVALID_AGE');
   }
 
-  var wasEmpty = sheet.getLastRow() <= 1;
   sheet.appendRow([
+    eventDate,
     clean_(payload.muniverse_nickname, 80),
     clean_(payload.account_email, 254),
     clean_(payload.name, 100),
     age,
+    clean_(payload.birth_date, 10),
     clean_(payload.nationality, 100),
     clean_(payload.phone, 40),
+    clean_(payload.x_account, 100),
     clean_(payload.contact_email, 254),
     idempotencyKey,
     new Date()
   ]);
-  sheet.hideColumns(8);
+  sheet.hideColumns(11);
 
-  var emailSent = false;
-  if (wasEmpty) {
-    emailSent = notifyOnce_(
-      'music_core_' + spreadsheet.getId() + '_' + eventDate,
-      eventDate + ' 쇼! 음악중심 방청자 명단 생성',
-      eventDate + ' 녹화 방청자 정보 입력이 시작되었습니다.',
-      spreadsheet.getUrl()
-    );
-  }
+  var attendeeNumber = Math.max(1, sheet.getLastRow() - 1);
+  var emailSent = notifyMusicCoreSubmission_(attendeeNumber, spreadsheet.getUrl(), payload);
 
   return {
     sheetUpdated: true,
     emailSent: emailSent,
     duplicate: false,
+    attendeeNumber: attendeeNumber,
     spreadsheetUrl: spreadsheet.getUrl()
   };
 }
@@ -301,47 +301,42 @@ function getOrCreateFansPickSheet_(spreadsheet) {
   return sheet;
 }
 
-function getOrCreateMusicCoreSpreadsheet_(eventDate) {
-  var parts = eventDate.split('-');
-  var title = Number(parts[0]) + '년 ' + Number(parts[1]) + '월 쇼! 음악중심 방청자 명단';
-  var files = DriveApp.getFilesByName(title);
-  while (files.hasNext()) {
-    var file = files.next();
-    if (file.getMimeType() === MimeType.GOOGLE_SHEETS) {
-      return SpreadsheetApp.openById(file.getId());
-    }
+function getMusicCoreSpreadsheet_() {
+  try {
+    return SpreadsheetApp.openById(CONFIG.MUSIC_CORE_SHEET_ID);
+  } catch (_) {
+    throw new Error('MUSIC_CORE_SHEET_UNAVAILABLE');
   }
-
-  var spreadsheet = SpreadsheetApp.create(title);
-  moveToConfiguredFolder_(spreadsheet.getId(), CONFIG.MUSIC_CORE_FOLDER_PROPERTY);
-  return spreadsheet;
 }
 
-function getOrCreateMusicCoreEventSheet_(spreadsheet, eventDate) {
-  var sheet = spreadsheet.getSheetByName(eventDate);
+function getMusicCoreSheet_(spreadsheet) {
+  var sheet = spreadsheet.getSheetByName(CONFIG.MUSIC_CORE_SHEET_NAME);
   if (!sheet) {
     var sheets = spreadsheet.getSheets();
     if (sheets.length === 1 && sheets[0].getLastRow() === 0) {
       sheet = sheets[0];
-      sheet.setName(eventDate);
+      sheet.setName(CONFIG.MUSIC_CORE_SHEET_NAME);
     } else {
-      sheet = spreadsheet.insertSheet(eventDate);
+      sheet = spreadsheet.insertSheet(CONFIG.MUSIC_CORE_SHEET_NAME);
     }
   }
 
   var headers = [
+    '녹화일',
     'Muniverse 닉네임',
     '가입 이메일',
     '이름',
     '만 나이',
+    '생년월일',
     '국적',
     '연락처',
+    'X 계정',
     '방청 안내용 이메일',
     '내부 중복방지용 등록키',
     '등록 시각'
   ];
   initializeSheet_(sheet, headers, '#dff7f2');
-  sheet.hideColumns(8);
+  sheet.hideColumns(11);
   return sheet;
 }
 
@@ -392,6 +387,21 @@ function notifyFansPickSubmission_(attendeeNumber, spreadsheetUrl, payload) {
   return true;
 }
 
+function notifyMusicCoreSubmission_(attendeeNumber, spreadsheetUrl, payload) {
+  var properties = PropertiesService.getScriptProperties();
+  var email = clean_(properties.getProperty(CONFIG.NOTIFY_EMAIL_PROPERTY), 254) || CONFIG.DEFAULT_NOTIFY_EMAIL;
+  var subject = attendeeNumber + '번째 쇼! 음악중심 방청자 개인정보 입력';
+  var message = [
+    '쇼! 음악중심 ' + attendeeNumber + '번째 방청자가 개인정보 입력을 완료했습니다.',
+    '',
+    '녹화일: ' + clean_(payload.event_date, 10),
+    'Muniverse 닉네임: ' + clean_(payload.muniverse_nickname, 80),
+    '방청자 명단: ' + spreadsheetUrl
+  ].join('\n');
+  MailApp.sendEmail(email, subject, message);
+  return true;
+}
+
 function notifyOnce_(notificationKey, subject, message, spreadsheetUrl) {
   var properties = PropertiesService.getScriptProperties();
   var key = 'notified_' + sha256Hex_(notificationKey);
@@ -415,14 +425,24 @@ function purgeFansPickData() {
 }
 
 /**
- * Run after the specified SHOW! MUSIC CORE recording's verification and guidance are complete.
+ * Run after the specified SHOW! MUSIC CORE recording's verification and final guidance are complete.
+ * The dedicated Music Core spreadsheet is shared across recording dates, so only matching rows are removed.
  */
 function purgeMusicCoreEvent(eventDate) {
   var normalized = clean_(eventDate, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) throw new Error('INVALID_EVENT_DATE');
-  var spreadsheet = getOrCreateMusicCoreSpreadsheet_(normalized);
-  var sheet = spreadsheet.getSheetByName(normalized);
-  if (sheet) clearDataRows_(sheet);
+  var spreadsheet = getMusicCoreSpreadsheet_();
+  var sheet = getMusicCoreSheet_(spreadsheet);
+  var lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    var width = 12;
+    var values = sheet.getRange(2, 1, lastRow - 1, width).getValues();
+    var keep = values.filter(function(row) {
+      return clean_(row[0], 10) !== normalized;
+    });
+    sheet.getRange(2, 1, lastRow - 1, width).clearContent();
+    if (keep.length) sheet.getRange(2, 1, keep.length, width).setValues(keep);
+  }
   return spreadsheet.getUrl();
 }
 
