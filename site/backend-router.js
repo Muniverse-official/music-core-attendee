@@ -1,10 +1,11 @@
 (() => {
   'use strict';
 
-  const ORIGIN = 'https://tcxugltvmatbgsmcepso.supabase.co';
+  const LEGACY_ORIGIN = 'https://tcxugltvmatbgsmcepso.supabase.co';
+  const ACTIVE_ORIGIN = 'https://kkaoerbblpuszptiibvo.supabase.co';
   const LEGACY_PATH = '/functions/v1/music-core-attendee';
-  const VERIFY_ENDPOINT = `${ORIGIN}/functions/v1/music-core-attendee-verify`;
-  const REGISTER_ENDPOINT = `${ORIGIN}/functions/v1/music-core-attendee-register`;
+  const VERIFY_ENDPOINT = `${ACTIVE_ORIGIN}/functions/v1/music-core-attendee-verify`;
+  const REGISTER_ENDPOINT = `${ACTIVE_ORIGIN}/functions/v1/music-core-attendee-register`;
   const nativeFetch = window.fetch.bind(window);
 
   function route(rawUrl) {
@@ -15,7 +16,7 @@
       return rawUrl;
     }
 
-    if (url.origin !== ORIGIN || url.pathname !== LEGACY_PATH) return rawUrl;
+    if (url.origin !== LEGACY_ORIGIN || url.pathname !== LEGACY_PATH) return rawUrl;
     const action = url.searchParams.get('action');
     if (action === 'verify') return VERIFY_ENDPOINT;
     if (action === 'submit') return REGISTER_ENDPOINT;
