@@ -47,7 +47,7 @@
 
     <section class="panel info-panel hidden" id="step2">
       <div class="section-heading"><span class="number-badge purple">STEP 02</span><div><h2 id="infoTitle">방청자 정보 입력</h2><p id="infoDesc">녹화 당일 본인 확인과 방청 안내에 사용할 정보를 입력합니다.</p></div></div>
-      <div class="event-date-card"><span id="eventDateLabel">대상 녹화일</span><strong id="eventDate">-</strong></div>
+      <div class="event-date-card hidden"><span id="eventDateLabel">대상 녹화일</span><strong id="eventDate">-</strong></div>
       <div class="form-grid">
         <div class="field"><label for="name" id="nameLabel">이름</label><input id="name" maxlength="100" autocomplete="name"></div>
         <div class="field"><label for="birthDate" id="birthLabel">생년월일</label><input id="birthDate" type="date" autocomplete="bday"></div>
@@ -55,14 +55,14 @@
         <div class="field full full-span phone-field"><label id="phoneLabel">연락처</label><div class="choice-row" role="radiogroup" aria-labelledby="phoneLabel"><label class="choice-card"><input type="radio" name="phoneMode" value="KR" checked><span id="phoneKoreanLabel">한국 번호 있음</span></label><label class="choice-card"><input type="radio" name="phoneMode" value="INTL"><span id="phoneInternationalLabel">한국 번호 없음</span></label></div><div id="koreanPhoneWrap" class="sub-field"><input id="koreanPhone" type="tel" maxlength="20" autocomplete="tel-national" inputmode="tel" placeholder="010-1234-5678"></div><div id="internationalPhoneWrap" class="sub-field hidden"><input id="internationalPhone" type="tel" maxlength="40" autocomplete="tel" inputmode="tel" placeholder="+1 212 555 1234"></div><input id="phone" type="hidden"><p id="phoneHint" class="hint"></p></div>
       </div>
       <div class="field full"><label for="xAccount" id="xAccountLabel">X 계정</label><div class="input-wrap"><span aria-hidden="true">@</span><input id="xAccount" type="text" maxlength="100" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@username" aria-describedby="xAccountHint"></div><p class="hint" id="xAccountHint">@아이디 또는 X 프로필 주소를 입력해 주세요. (예: @Muniverse_io)</p></div>
-      <div class="field full"><label for="contactEmail" id="contactLabel">방청 안내용 이메일</label><div class="input-wrap"><span aria-hidden="true">✉</span><input id="contactEmail" type="email" maxlength="254" autocomplete="email"></div><p class="hint" id="contactHint">해외 번호는 문자 수신이 어려울 수 있어 이메일도 함께 수집합니다.</p></div>
+      <div class="field full"><label for="contactEmail" id="contactLabel">방청 안내용 이메일</label><div class="input-wrap"><span aria-hidden="true">✉</span><input id="contactEmail" type="email" maxlength="254" autocomplete="email"></div><p class="hint" id="contactHint">방청 안내는 문자로 별도 안내됩니다. (한국 번호가 없는 경우 X DM 또는 이메일로 안내됩니다.)</p></div>
       <div class="important-note"><div class="megaphone" aria-hidden="true">◖</div><p id="noticeText"><strong>만 15세 이상</strong>만 참여할 수 있습니다. 녹화 당일 유효한 사진 신분증 지참이 필수이며, 방청권 양도·판매·명의 변경은 불가합니다.</p></div>
       <div class="message error" id="submitMessage" role="status" aria-live="polite"></div><button id="submitBtn" class="pixel-button centered" type="button"><span id="submitBtnText">제출하기</span><b aria-hidden="true">›</b></button>
     </section>
 
     <section class="panel done-panel hidden" id="done" aria-live="polite">
       <div class="section-heading"><span class="number-badge mint">STEP 03</span><div><h2 id="doneTitle">등록 완료</h2><p id="doneDesc">방청자 정보가 정상적으로 등록되었습니다.</p></div></div>
-      <div class="done-content"><div class="success-icon" aria-hidden="true">✓</div><div><strong id="doneMain">방청자 정보가 정상적으로 등록되었습니다.</strong><p id="doneSub">입장 안내는 등록된 연락처 및 이메일로 발송됩니다.</p><p class="done-date"><span id="doneEventLabel">대상 녹화일</span> <b id="doneEventDate">-</b></p></div></div>
+      <div class="done-content"><div class="success-icon" aria-hidden="true">✓</div><div><strong id="doneMain">방청자 정보가 정상적으로 등록되었습니다.</strong><p id="doneSub">방청 안내는 문자로 별도 안내됩니다. 한국 번호가 없는 경우 X DM 또는 이메일로 안내됩니다.</p><p class="done-date hidden"><span id="doneEventLabel">대상 녹화일</span> <b id="doneEventDate">-</b></p></div></div>
     </section>
 
     <section class="panel hidden already-panel" id="already" aria-live="polite">
@@ -73,11 +73,11 @@
     <footer><a href="mailto:support@muniverse.io">support@muniverse.io</a><small>© Muniverse. All rights reserved.</small></footer>
   </main>
   <script src="./i18n.js" defer></script>
-  <script src="./backend-router.js?v=20260904-split2" defer></script>
+  <script src="./backend-router.js?v=20260904-split3" defer></script>
   <script src="./app.js" defer></script>
   <script src="./phone.js" defer></script>
-  <script src="./x-account.js?v=20260904-x1" defer></script>
+  <script src="./x-account.js?v=20260904-x2" defer></script>
   <script src="./submitted-lock.js?v=20260904-lock1" defer></script>
-  <script src="./ui.js" defer></script>
+  <script src="./ui.js?v=20260904-guide2" defer></script>
 </body>
 </html>
