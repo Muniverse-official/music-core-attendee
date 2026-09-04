@@ -102,6 +102,7 @@
     try {
       const url = new URL(rawUrl, window.location.href);
       if (url.pathname.endsWith('/functions/v1/music-core-attendee-register')) return true;
+      if (url.pathname.endsWith('/functions/v1/music-core-attendee-register-v2')) return true;
       return url.pathname.endsWith('/functions/v1/music-core-attendee') && url.searchParams.get('action') === 'submit';
     } catch {
       return false;
