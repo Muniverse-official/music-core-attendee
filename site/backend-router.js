@@ -5,7 +5,7 @@
   const ACTIVE_ORIGIN = 'https://kkaoerbblpuszptiibvo.supabase.co';
   const LEGACY_PATH = '/functions/v1/music-core-attendee';
   const VERIFY_ENDPOINT = `${ACTIVE_ORIGIN}/functions/v1/music-core-attendee-verify`;
-  const REGISTER_ENDPOINT = `${ACTIVE_ORIGIN}/functions/v1/music-core-attendee-register`;
+  const REGISTER_ENDPOINT = `${ACTIVE_ORIGIN}/functions/v1/music-core-attendee-register-v2`;
   const nativeFetch = window.fetch.bind(window);
 
   function route(rawUrl) {
