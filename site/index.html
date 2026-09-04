@@ -54,6 +54,7 @@
         <div class="field full full-span"><label id="nationalityLabel">국적</label><div class="choice-row" role="radiogroup" aria-labelledby="nationalityLabel"><label class="choice-card"><input type="radio" name="nationalityMode" value="KR" checked><span id="nationalityKoreanLabel">한국인</span></label><label class="choice-card"><input type="radio" name="nationalityMode" value="NON_KR"><span id="nationalityForeignLabel">한국인 아님</span></label></div><div id="countryWrap" class="sub-field hidden"><label for="country" id="countryLabel">국가 선택</label><select id="country" autocomplete="country"></select></div><input id="nationality" type="hidden" value="KR"><p class="hint" id="nationalityHint"></p></div>
         <div class="field full full-span phone-field"><label id="phoneLabel">연락처</label><div class="choice-row" role="radiogroup" aria-labelledby="phoneLabel"><label class="choice-card"><input type="radio" name="phoneMode" value="KR" checked><span id="phoneKoreanLabel">한국 번호 있음</span></label><label class="choice-card"><input type="radio" name="phoneMode" value="INTL"><span id="phoneInternationalLabel">한국 번호 없음</span></label></div><div id="koreanPhoneWrap" class="sub-field"><input id="koreanPhone" type="tel" maxlength="20" autocomplete="tel-national" inputmode="tel" placeholder="010-1234-5678"></div><div id="internationalPhoneWrap" class="sub-field hidden"><input id="internationalPhone" type="tel" maxlength="40" autocomplete="tel" inputmode="tel" placeholder="+1 212 555 1234"></div><input id="phone" type="hidden"><p id="phoneHint" class="hint"></p></div>
       </div>
+      <div class="field full"><label for="xAccount" id="xAccountLabel">X 계정</label><div class="input-wrap"><span aria-hidden="true">@</span><input id="xAccount" type="text" maxlength="100" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@username" aria-describedby="xAccountHint"></div><p class="hint" id="xAccountHint">@아이디 또는 X 프로필 주소를 입력해 주세요. (예: @Muniverse_io)</p></div>
       <div class="field full"><label for="contactEmail" id="contactLabel">방청 안내용 이메일</label><div class="input-wrap"><span aria-hidden="true">✉</span><input id="contactEmail" type="email" maxlength="254" autocomplete="email"></div><p class="hint" id="contactHint">해외 번호는 문자 수신이 어려울 수 있어 이메일도 함께 수집합니다.</p></div>
       <div class="important-note"><div class="megaphone" aria-hidden="true">◖</div><p id="noticeText"><strong>만 15세 이상</strong>만 참여할 수 있습니다. 녹화 당일 유효한 사진 신분증 지참이 필수이며, 방청권 양도·판매·명의 변경은 불가합니다.</p></div>
       <div class="message error" id="submitMessage" role="status" aria-live="polite"></div><button id="submitBtn" class="pixel-button centered" type="button"><span id="submitBtnText">제출하기</span><b aria-hidden="true">›</b></button>
@@ -65,11 +66,18 @@
     </section>
 
     <section class="panel hidden already-panel" id="already" aria-live="polite">
-      <strong id="alreadyMessage">이미 입력된 정보입니다.</strong>
+      <strong id="alreadyMessage">이미 방청자 정보 등록이 완료되었습니다.</strong>
+      <p id="alreadyHelp">등록 정보 수정이 필요한 경우 support@muniverse.io로 문의해 주세요.</p>
     </section>
 
     <footer><a href="mailto:support@muniverse.io">support@muniverse.io</a><small>© Muniverse. All rights reserved.</small></footer>
   </main>
-  <script src="./i18n.js" defer></script><script src="./app.js" defer></script><script src="./phone.js" defer></script><script src="./ui.js" defer></script>
+  <script src="./i18n.js" defer></script>
+  <script src="./backend-router.js?v=20260904-split1" defer></script>
+  <script src="./app.js" defer></script>
+  <script src="./phone.js" defer></script>
+  <script src="./x-account.js?v=20260904-x1" defer></script>
+  <script src="./submitted-lock.js?v=20260904-lock1" defer></script>
+  <script src="./ui.js" defer></script>
 </body>
 </html>
