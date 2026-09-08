@@ -1,17 +1,18 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" data-availability="blocked">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="light">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; connect-src https://kkaoerbblpuszptiibvo.supabase.co; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; connect-src https://kkaoerbblpuszptiibvo.supabase.co; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
   <title>쇼! 음악중심 방청자 당첨 확인 · Muniverse</title>
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./registration-v2.css">
+  <link rel="stylesheet" href="./availability.css?v=3">
 </head>
-<body>
+<body data-attendee-program="music_core">
   <main class="page-shell">
     <section class="hero">
       <div class="grid-overlay" aria-hidden="true"></div>
@@ -28,7 +29,7 @@
         </div>
       </div>
     </section>
-
+    <section class="panel closed-card" id="closedCard" aria-live="polite" aria-labelledby="closedTitle"><div class="closed-content"><svg class="closed-icon" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="34"></circle><path d="M25 40l10 10 20-21"></path></svg><h1 id="closedTitle">확인 중입니다.</h1><p class="closed-lead" id="closedDesc">잠시만 기다려 주세요.</p></div></section>
     <section class="panel verify-panel" id="step1">
       <div class="section-heading"><span class="number-badge pink">STEP 01</span><div><h2 id="verifyTitle">당첨자 확인</h2><p id="verifyDesc">당첨된 Muniverse 계정의 이메일과 닉네임을 입력해 주세요.</p></div></div>
       <div class="verify-layout">
@@ -44,7 +45,6 @@
         <div class="verify-art" aria-hidden="true"><div class="id-card"><div class="avatar"></div><div class="id-lines"><i></i><i></i><i></i></div></div><div class="lens"></div><span class="mini-star one">✦</span><span class="mini-star two">✧</span></div>
       </div>
     </section>
-
     <section class="panel info-panel hidden" id="step2">
       <div class="section-heading"><span class="number-badge purple">STEP 02</span><div><h2 id="infoTitle">방청자 정보 입력</h2><p id="infoDesc">녹화 당일 본인 확인과 방청 안내에 사용할 정보를 입력합니다.</p></div></div>
       <div class="event-date-card hidden"><span id="eventDateLabel">대상 녹화일</span><strong id="eventDate">-</strong></div>
@@ -59,27 +59,20 @@
       <div class="important-note"><div class="megaphone" aria-hidden="true">◖</div><p id="noticeText"><strong>만 15세 이상</strong>만 참여할 수 있습니다. 녹화 당일 유효한 사진 신분증 지참이 필수이며, 방청권 양도·판매·명의 변경은 불가합니다.</p></div>
       <div class="message error" id="submitMessage" role="status" aria-live="polite"></div><button id="submitBtn" class="pixel-button centered" type="button"><span id="submitBtnText">제출하기</span><b aria-hidden="true">›</b></button>
     </section>
-
     <section class="panel done-panel hidden" id="done" aria-live="polite">
       <div class="section-heading"><span class="number-badge mint">STEP 03</span><div><h2 id="doneTitle">등록 완료</h2><p id="doneDesc">방청자 정보가 정상적으로 등록되었습니다.</p></div></div>
       <div class="done-content"><div class="success-icon" aria-hidden="true">✓</div><div><strong id="doneMain">방청자 정보가 정상적으로 등록되었습니다.</strong><p id="doneSub">방청 안내는 문자로 별도 안내됩니다. 한국 번호가 없는 경우 X DM 또는 이메일로 안내됩니다.</p><p class="done-date hidden"><span id="doneEventLabel">대상 녹화일</span> <b id="doneEventDate">-</b></p></div></div>
     </section>
-
-    <section class="panel hidden already-panel" id="already" aria-live="polite">
-      <strong id="alreadyMessage">이미 방청자 정보 등록이 완료되었습니다.</strong>
-      <p id="alreadyHelp">등록 정보 수정이 필요한 경우 support@muniverse.io로 문의해 주세요.</p>
-    </section>
-
+    <section class="panel hidden already-panel" id="already" aria-live="polite"><strong id="alreadyMessage">이미 방청자 정보 등록이 완료되었습니다.</strong><p id="alreadyHelp">등록 정보 수정이 필요한 경우 support@muniverse.io로 문의해 주세요.</p></section>
     <footer><a href="mailto:support@muniverse.io">support@muniverse.io</a><small>© Muniverse. All rights reserved.</small></footer>
   </main>
   <script src="./i18n.js" defer></script>
-  <script src="./deadline-ui.js?v=20260908-testwindow-v2" defer></script>
-  <script src="./backend-router.js?v=20260908-testwindow-v2" defer></script>
-  <script src="./app.js?v=20260908-testwindow-v2" defer></script>
+  <script src="./availability.js?v=3" defer></script>
+  <script src="./backend-router.js?v=20260908-console3" defer></script>
+  <script src="./app.js?v=20260908-console3" defer></script>
   <script src="./title-copy.js?v=20260908-title1" defer></script>
   <script src="./phone.js" defer></script>
   <script src="./x-account.js?v=20260904-x2" defer></script>
   <script src="./submitted-lock.js?v=20260904-lock1" defer></script>
   <script src="./ui.js?v=20260904-guide2" defer></script>
-</body>
-</html>
+</body></html>
