@@ -1,45 +1,62 @@
-# Muniverse attendee dispatcher (Apps Script v7)
+# Muniverse attendee dispatcher (Apps Script v8)
 
-This Apps Script receives signed webhooks from the Supabase Edge Functions and writes completed attendee registrations to Google Sheets.
+This Apps Script receives signed attendee registration webhooks and writes each completed registration into a **program-specific spreadsheet / round-specific tab**.
+
+## Sheet structure
+
+### SHOW! MUSIC CORE
+
+- Spreadsheet: `쇼! 음악중심 방청자 등록 명단`
+- Spreadsheet ID: `191598ZPdnCdDlvoa8aFGGNPmT1_xqEZXOq7vvEEahp0`
+- Tabs: `963회차`, `964회차`, `965회차` ...
+
+### FANS PICK
+
+- Spreadsheet: `FANS PICK 방청자 등록 명단`
+- Spreadsheet ID: `1GsFyGTLeJV62T9xsfFyvsxOljRy3Egr7MkahpttlrPs`
+- Tabs: `1회차`, `2회차`, `3회차` ...
+
+Each tab belongs to one `round_id`. The round ID is stored as Google Sheets developer metadata, so renaming a round does not disconnect its data.
+
+## Round-tab behavior
+
+- `round_id` and `round_title` are required in the webhook payload.
+- On the first completed attendee registration for a round, the script creates that round's tab if it does not already exist.
+- New round tabs are inserted at the **leftmost position**, so the newest round is the first tab administrators see.
+- Existing round tabs remain untouched and preserve all prior registrations.
+- The first four rows of each round tab are reserved for round metadata and headers:
+  1. Round title
+  2. Attendance date
+  3. Registration window in KST
+  4. Column headers
+- Registration rows start at row 5.
+- Internal idempotency columns are hidden.
+- Notification email links point directly to the matching round tab using its `gid`.
 
 ## Script Properties
 
 Required:
 
-- `WEBHOOK_TOKEN`: shared webhook secret. Use the same value as the relevant Supabase function secret/runtime config.
+- `WEBHOOK_TOKEN`: shared webhook secret.
 
 Recommended:
 
-- `NOTIFY_EMAIL`: notification address. Defaults to `support@muniverse.io` when omitted.
-- `FANS_PICK_SHEET_ID`: existing FANS PICK Google Sheet ID. When omitted, the script reuses the legacy sheet when accessible or creates a new sheet.
-- `FANS_PICK_FOLDER_ID`: destination folder for a newly created FANS PICK sheet.
+- `NOTIFY_EMAIL`: notification address. Defaults to `support@muniverse.io`.
+- `FANS_PICK_SHEET_ID`: FANS PICK spreadsheet ID. The legacy sheet is reused if accessible.
+- `FANS_PICK_FOLDER_ID`: destination folder if a FANS PICK spreadsheet ever has to be created.
 
-## SHOW! MUSIC CORE
+## Duplicate protection
 
-Music Core uses one dedicated spreadsheet rather than creating a new file per month.
-
-- Spreadsheet: `쇼! 음악중심 방청자 등록 명단`
-- Spreadsheet ID: `191598ZPdnCdDlvoa8aFGGNPmT1_xqEZXOq7vvEEahp0`
-- Sheet: `방청자 등록`
-- Columns: 녹화일 / Muniverse 닉네임 / 가입 이메일 / 이름 / 만 나이 / 생년월일 / 국적 / 연락처 / X 계정 / 방청 안내용 이메일 / 내부 중복방지용 등록키 / 등록 시각
-- The idempotency-key column is hidden.
-- Every successful new Music Core registration appends exactly one row.
-- Duplicate webhook delivery does not append a second row.
-- Every successful new Music Core registration sends an email to `NOTIFY_EMAIL` or `support@muniverse.io`.
-
-## Behavior
-
-- Accepts `fans_pick`, legacy `cover_pick`, and `music_core` webhook kinds.
-- Prevents replay with a timestamp and one-time nonce.
-- Uses an idempotency key so the same registration is not appended twice.
-- FANS PICK behavior remains unchanged.
+The dispatcher checks the idempotency key **inside the target round tab** before appending a row. A retried webhook therefore cannot create a second row in the same round.
 
 ## Deployment
 
-After updating `Code.gs`, deploy a **new web-app version** from the existing Apps Script project. If the existing deployment is edited to point to the new version, its `/exec` URL remains unchanged and no Supabase URL change is required.
-
-The production Supabase `music-core-attendee-register` function currently calls the shared Apps Script dispatcher using `kind: music_core`.
+After updating `Code.gs`, deploy a **new web-app version** from each existing Apps Script project that serves the production `/exec` webhook URL. Updating the deployment to the new version preserves the `/exec` URL, so Supabase does not need a URL change.
 
 ## Post-event deletion
 
-After attendee verification and final guidance are complete, run `purgeFansPickData()` or `purgeMusicCoreEvent('YYYY-MM-DD')` in Apps Script. Music Core uses a single dedicated sheet, so `purgeMusicCoreEvent()` removes only rows matching that recording date.
+- FANS PICK: `purgeFansPickRound('2회차')`
+- Legacy first-round helper: `purgeFansPickData()`
+- SHOW! MUSIC CORE: `purgeMusicCoreEvent('YYYY-MM-DD')`
+
+These functions clear registration rows while keeping the round tab and its header structure.
