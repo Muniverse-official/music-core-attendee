@@ -1,11 +1,11 @@
-name: Attendee UI smoke tests
+name: Admin UI smoke tests
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
       - '.github/workflows/attendee-ui-smoke.yml'
-      - 'tools/attendee-ui-smoke.mjs'
+      - 'tools/admin-ui-smoke.mjs'
       - 'site/admin/**'
 permissions:
   contents: read
@@ -19,12 +19,12 @@ jobs:
         run: npm install --no-save --package-lock=false playwright@1.55.0
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Check deployed pages
-        run: node tools/attendee-ui-smoke.mjs
-      - name: Save screenshots
+      - name: Check admin login and latest-round UI
+        run: node tools/admin-ui-smoke.mjs
+      - name: Save screenshot
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: attendee-ui-screenshots
+          name: admin-ui-screenshot
           path: qa-screenshots
           retention-days: 3
