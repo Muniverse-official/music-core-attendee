@@ -1,6 +1,7 @@
 (() => {
 'use strict';
 const p=location.pathname.includes('/cover-pick-attendee/')?'fans_pick':'music_core';
+const CDN='https://kkaoerbblpuszptiibvo.supabase.co/storage/v1/object/public/attendee-public-config/'+p+'.json';
 const API='https://kkaoerbblpuszptiibvo.supabase.co/functions/v1/attendee-config?program='+p;
 const root=document.documentElement, $=id=>document.getElementById(id);
 const words={
@@ -10,7 +11,7 @@ ja:{loading:['確認中です。','しばらくお待ちください。'],before
 'zh-TW':{loading:['確認中','請稍候。'],before:['觀眾中獎確認尚未開始。','請於中獎公告開始後再次確認。'],closed:['觀眾中獎公告已結束。',p==='fans_pick'?'敬請期待下一次 FANS PICK！':'敬請期待下一次《Show! 音樂中心》觀眾中獎公告。'],paused:['觀眾中獎確認暫時停止。','請稍後再次確認。'],error:['目前無法開啟此頁面。','請稍後再試。'],tba:'觀眾活動日期將另行通知。',date:'觀眾活動日期',hero:'觀眾中獎確認'},
 'zh-CN':{loading:['确认中','请稍候。'],before:['观众中奖确认尚未开始。','请于中奖公告开始后再次确认。'],closed:['观众中奖公告已结束。',p==='fans_pick'?'敬请期待下一次 FANS PICK！':'敬请期待下一次《Show! 音乐中心》观众中奖公告。'],paused:['观众中奖确认暂时停止。','请稍后再次确认。'],error:['目前无法打开此页面。','请稍后重试。'],tba:'观众活动日期将另行通知。',date:'观众活动日期',hero:'观众中奖确认'}
 };
-const REVISION='20260908-load-v5';
+const REVISION='20260908-cdn-v6';
 const POLL_MS=60000, JITTER_MS=6000, MAX_CONFIG_AGE_MS=90000;
 const MIN_REFRESH_MS=54000, MAX_RETRY_MS=300000;
 let cfg=null,serverBase=0,loadedAt=0,failed=false,loading=false,previous='LOADING';
@@ -19,7 +20,6 @@ const mono=()=>performance.now();
 const lang=()=>words[$('lang')?.value]?$('lang').value:'ko',copy=()=>words[lang()];
 function state(){
   if(!cfg)return failed?'UNAVAILABLE':'LOADING';
-  // A stale display must not remain OPEN indefinitely after a network failure.
   if(mono()-loadedAt>MAX_CONFIG_AGE_MS)return'UNAVAILABLE';
   const n=serverBase+(mono()-loadedAt),o=Date.parse(cfg.openAt),c=Date.parse(cfg.closeAt);
   if(!Number.isFinite(o)||!Number.isFinite(c))return'UNAVAILABLE';
@@ -71,6 +71,22 @@ function pollDelay(){
   const base=failures?Math.min(MAX_RETRY_MS,POLL_MS*2**Math.min(failures-1,3)):POLL_MS;
   return base+(Math.random()*2-1)*JITTER_MS;
 }
+function valid(j){
+  if(!j||j.ok!==true||j.program!==p||!Number.isFinite(Date.parse(j.openAt))||!Number.isFinite(Date.parse(j.closeAt))||Date.parse(j.openAt)>=Date.parse(j.closeAt))return false;
+  for(const k of ['paused','testMode','showEventDate','eventDateTba'])if(typeof j[k]!=='boolean')return false;
+  return true;
+}
+async function fetchConfig(){
+  try{
+    const r=await fetch(CDN,{credentials:'omit',signal:AbortSignal.timeout(5000)}),j=await r.json();
+    if(!r.ok||!valid(j))throw new Error('CDN_CONFIG');
+    return{j,clock:Date.now(),source:'cdn'};
+  }catch{
+    const r=await fetch(API,{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(8000)}),j=await r.json(),st=Date.parse(j.serverTime);
+    if(!r.ok||!valid(j)||!Number.isFinite(st))throw new Error('API_CONFIG');
+    return{j,clock:st,source:'api'};
+  }
+}
 async function refresh(){
   if(loading||!active())return;
   const wait=Math.max(lastAttempt+MIN_REFRESH_MS,nextDue)-mono();
@@ -78,12 +94,8 @@ async function refresh(){
   clearTimeout(timer);timer=null;clearTimeout(wakeTimer);wakeTimer=null;
   loading=true;lastAttempt=mono();const startedAt=lastAttempt;
   try{
-    const r=await fetch(API,{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(10000)});
-    const j=await r.json(),receivedAt=mono(),st=Date.parse(j.serverTime);
-    if(!r.ok||!j.ok||j.program!==p||!Number.isFinite(st)||!Number.isFinite(Date.parse(j.openAt))||!Number.isFinite(Date.parse(j.closeAt))||Date.parse(j.openAt)>=Date.parse(j.closeAt))throw new Error('CONFIG');
-    for(const k of ['paused','testMode','showEventDate','eventDateTba'])if(typeof j[k]!=='boolean')throw new Error('CONFIG');
-    // Use server time plus a monotonic elapsed clock, not the visitor's timezone/clock.
-    cfg=j;loadedAt=receivedAt;serverBase=st+(receivedAt-startedAt)/2;
+    const got=await fetchConfig(),receivedAt=mono();
+    cfg=got.j;loadedAt=receivedAt;serverBase=got.clock+(receivedAt-startedAt)/2;
     failures=0;failed=false;
   }catch{failed=true;failures=Math.min(failures+1,8)}
   finally{loading=false;render();arm(pollDelay())}
@@ -93,7 +105,6 @@ function wake(){
   if(!active()||loading)return;
   const wait=Math.max(nextDue,lastAttempt+MIN_REFRESH_MS)-mono();
   if(wait>0){if(timer===null)arm(wait);return}
-  // Focus/online/visibility events often arrive together: schedule only one request.
   if(wakeTimer===null)wakeTimer=setTimeout(()=>{wakeTimer=null;void refresh()},Math.random()*2000);
 }
 document.addEventListener('click',e=>{
@@ -112,8 +123,6 @@ window.addEventListener('offline',()=>{clearTimeout(timer);timer=null});
 window.addEventListener('online',wake);window.addEventListener('focus',wake);
 Object.defineProperty(window,'AttendeeAvailability',{value:Object.freeze({refresh,state,revision:REVISION}),writable:false});
 render();
-// Spread a simultaneous page-opening burst; no registration or PII is sent here.
 arm(Math.random()*1500);
-// This timer performs local display updates only. It does not query the server.
 setInterval(()=>{if(!document.hidden&&!suspended)render()},1000);
 })();
