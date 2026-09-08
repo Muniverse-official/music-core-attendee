@@ -14,6 +14,8 @@ body[data-attendee-program="music_core"] .closed-icon circle{stroke:#df53a4}
 body[data-attendee-program="music_core"] .closed-icon path{stroke:#7957ce}
 body[data-attendee-program="music_core"] .closed-card h1{color:#302244}
 body[data-attendee-program="music_core"] .closed-lead{color:#76667f}
+body[data-attendee-program="fans_pick"] .topbar .language-picker{margin-left:auto}
+html:not([data-availability="open"]) body[data-attendee-program="fans_pick"] .wrap>footer{display:none}
 .availability-date{font-size:14px;line-height:1.6;font-weight:600;padding:13px 16px;margin:0 0 18px;border-radius:12px;background:#4a6fc41c;color:inherit}
 body[data-attendee-program="music_core"] .availability-date{background:#f9eef7;color:#7b438b}
 @media(max-width:520px){.closed-card{min-height:285px;padding:34px 18px 38px}.closed-icon{width:64px;height:64px;margin-bottom:20px}.closed-card h1{font-size:22px}.closed-lead{font-size:15px;margin-top:12px}body[data-attendee-program="music_core"] .closed-card{min-height:285px}}
