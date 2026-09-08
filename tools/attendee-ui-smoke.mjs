@@ -32,9 +32,8 @@ await page.route('**/functions/v1/attendee-admin',async route=>{
  return route.fulfill({status:200,contentType:'application/json',headers:mockHeaders,body:JSON.stringify(result)});
 });
 const settle=()=>page.waitForFunction(()=>document.body.getAttribute('aria-busy')==='false');
-const choose=async id=>{await page.locator('[data-round-id="'+id+'"]').click();await settle()};
+const choose=async id=>{assert.equal(typeof id,'string');await page.locator('[data-round-id="'+id+'"]').click();await settle()};
 try{
- // Wait for the exact admin generation rather than testing an older CDN copy.
  for(let n=0;n<12;n++){await page.goto(host+'/music-core-attendee/admin/?qa=rounds5-'+n,{waitUntil:'networkidle'});if(await page.evaluate(()=>document.documentElement.dataset.adminBuild==='rounds-v5'))break;await page.waitForTimeout(5000)}
  assert.equal(await page.evaluate(()=>document.documentElement.dataset.adminBuild),'rounds-v5');
  assert.equal(await page.title(),'Muniverse 방청 통합 관리자');
@@ -44,6 +43,7 @@ try{
   assert.equal(await page.locator('#selectedRoundTitle').textContent(),p==='music_core'?'963회차':'1회차');
   assert.equal(await page.inputValue('#openAt'),'2026-09-09T17:00','KST must not depend on browser timezone');
   assert.equal(await page.locator('#totalCount').textContent(),'1');
+  await page.screenshot({path:'qa-screenshots/admin-'+p+'-base.png',fullPage:true});
   await page.check('#showEventDate');await page.click('#saveSettings');await settle();
   const save=requests.findLast(x=>x.action==='save_config');assert.equal(save.round_id,first);assert(save.registration_open_at.endsWith('+09:00'));
   const original=structuredClone(s.rounds.find(r=>r.id===first).config);
@@ -59,7 +59,7 @@ try{
   page.once('dialog',d=>d.accept());await page.click('#publishRound');await settle();assert.equal(s.active_round_id,next.id);assert.equal(s.rounds.filter(r=>r.is_public).length,1);
   await choose(first);page.once('dialog',d=>d.accept());await page.click('#archiveRound');await settle();assert(s.rounds.find(r=>r.id===first).archived);assert(await page.locator('#saveSettings').isDisabled());
   page.once('dialog',d=>d.accept());await page.click('#archiveRound');await settle();assert(!s.rounds.find(r=>r.id===first).archived);assert.equal(s.winners.find(w=>w.round_id===first).submitted,true);
-  await choose(next);await page.screenshot({path:'qa-screenshots/admin-'+p+'-rounds.png',fullPage:true});
+  await choose(next.id);await page.screenshot({path:'qa-screenshots/admin-'+p+'-rounds.png',fullPage:true});
   console.log('PASS '+p+': episode hierarchy, KST settings, same-date isolation, winner CRUD, next number, draft creation, explicit publish, archive and restore');
  }
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'qa-screenshots/admin-rounds-mobile.png',fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No mobile horizontal page overflow');await page.setViewportSize({width:1000,height:850});
