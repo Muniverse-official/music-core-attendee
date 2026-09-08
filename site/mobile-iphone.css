@@ -1,0 +1,89 @@
+/* iPhone/mobile typography stability — keep Korean copy on natural word boundaries. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@media (max-width: 480px) {
+  html[lang="ko"] .hero h1,
+  html[lang="ko"] .hero h1 em {
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow-wrap: normal;
+  }
+
+  html[lang="ko"] .hero-copy > p,
+  html[lang="ko"] .section-heading h2,
+  html[lang="ko"] .section-heading p,
+  html[lang="ko"] .field label,
+  html[lang="ko"] .choice-card span,
+  html[lang="ko"] .privacy summary,
+  html[lang="ko"] .privacy-content,
+  html[lang="ko"] .privacy-grid dt,
+  html[lang="ko"] .privacy-grid dd,
+  html[lang="ko"] .privacy-note,
+  html[lang="ko"] .consent-card,
+  html[lang="ko"] .consent-card #consentLabel,
+  html[lang="ko"] .hint,
+  html[lang="ko"] .important-note p,
+  html[lang="ko"] .done-content strong,
+  html[lang="ko"] .done-content p,
+  html[lang="ko"] .already-panel strong,
+  html[lang="ko"] .already-panel p,
+  html[lang="ko"] .closed-card h1,
+  html[lang="ko"] .closed-card p,
+  html[lang="ko"] .message {
+    word-break: keep-all !important;
+    overflow-wrap: break-word;
+  }
+
+  html[lang="ko"] .hero-copy > p,
+  html[lang="ko"] .section-heading p,
+  html[lang="ko"] .privacy-note,
+  html[lang="ko"] .hint,
+  html[lang="ko"] .important-note p,
+  html[lang="ko"] .done-content p,
+  html[lang="ko"] .already-panel p,
+  html[lang="ko"] .closed-card p {
+    text-wrap: pretty;
+  }
+
+  html[lang="ko"] .section-heading h2,
+  html[lang="ko"] .closed-card h1 {
+    text-wrap: balance;
+  }
+
+  .hero-copy > p {
+    max-width: 350px !important;
+    margin-inline: auto !important;
+  }
+
+  .section-heading p,
+  .hint,
+  .important-note p,
+  .done-content p,
+  .already-panel p,
+  .closed-card p {
+    line-height: 1.65;
+  }
+
+  .consent-card #consentLabel {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  html[lang="ko"] .hero h1 {
+    font-size: 31px;
+    letter-spacing: -0.05em;
+  }
+
+  .hero-inner {
+    padding-inline: 18px;
+  }
+
+  .panel {
+    width: calc(100% - 32px);
+    padding-inline: 18px;
+  }
+}
