@@ -17,12 +17,15 @@
   function unpin(url) {
     try { const u=new URL(url); u.searchParams.delete('forceFunctionRegion'); return u.toString(); } catch { return url; }
   }
+  function platformFailure(response) {
+    return response.status >= 500 && !response.headers.get('x-attendee-revision');
+  }
   const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
   window.fetch = async (input, init) => {
     if (typeof input === 'string' || input instanceof URL) {
-      const routed=route(String(input));
+      const original=String(input),routed=route(original);
       const response=await nativeFetch(routed,init);
-      if(routed!==String(input)&&response.status>=500){await wait(200+Math.random()*800);return nativeFetch(unpin(routed),init)}
+      if(routed!==original&&platformFailure(response)){await wait(200+Math.random()*800);return nativeFetch(unpin(routed),init)}
       return response;
     }
     if (input instanceof Request) {
@@ -30,7 +33,7 @@
       if (routedUrl !== input.url) {
         const first=new Request(routedUrl,input),second=first.clone();
         const response=await nativeFetch(first,init);
-        if(response.status>=500){await wait(200+Math.random()*800);return nativeFetch(new Request(unpin(routedUrl),second),init)}
+        if(platformFailure(response)){await wait(200+Math.random()*800);return nativeFetch(new Request(unpin(routedUrl),second),init)}
         return response;
       }
     }
