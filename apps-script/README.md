@@ -1,6 +1,6 @@
-# Muniverse attendee dispatcher (Apps Script v8)
+# Muniverse attendee dispatcher (Apps Script v9)
 
-This Apps Script receives signed attendee registration webhooks and writes each completed registration into a **program-specific spreadsheet / round-specific tab**.
+This Apps Script receives authenticated attendee registration webhooks and writes each completed registration into a **program-specific spreadsheet / round-specific tab**.
 
 ## Sheet structure
 
@@ -47,11 +47,22 @@ Recommended:
 
 ## Duplicate protection
 
-The dispatcher checks the idempotency key **inside the target round tab** before appending a row. A retried webhook therefore cannot create a second row in the same round.
+The dispatcher checks the idempotency key **inside the target round tab** before appending a row. A retried webhook therefore cannot create a second row in the same round. Hidden column 13 records `PENDING`, `SENDING:<timestamp>`, or `SENT:<timestamp>` independently from the row itself.
+
+- If the row exists and `SENT` is stored, a retry reports both steps complete without sending another email.
+- If sending threw an error, `PENDING` is kept and a later retry sends only the email.
+- If sending may have succeeded but the completion marker was not saved, `SENDING` is retained. The job becomes `EMAIL_STATUS_UNCERTAIN` and requires an operator to check the sent mail before any resend. Legacy rows with an empty marker are also treated as uncertain.
+- Names and other user strings are escaped as spreadsheet text. TBA attendance dates use the current Korean calendar date for age checks.
+
+This does not promise an exactly-once email API: MailApp does not provide an idempotency key. Ambiguous outcomes are surfaced instead of silently resending.
 
 ## Deployment
 
 After updating `Code.gs`, deploy a **new web-app version** from each existing Apps Script project that serves the production `/exec` webhook URL. Updating the deployment to the new version preserves the `/exec` URL, so Supabase does not need a URL change.
+
+After deployment, opening each existing `/exec` URL must return `version:9`, `sheetMode:round-tabs`, `deliveryState:per-row-v1`, and `textCells:true`. The server checks these fields before delivering personal data. Until the deployment is updated, registrations stay in the server queue and the administrator sees an update warning.
+
+Keep the existing Script Properties, notification recipient, execution identity, and access settings. Do not paste secrets into source code. `doGet()` only reports the code contract; a separate isolated registration test is still needed to verify spreadsheet permissions and mail delivery.
 
 ## Post-event deletion
 

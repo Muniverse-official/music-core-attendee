@@ -23,6 +23,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Use Node 24 for regression checks
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Check out FANS PICK client for shared regressions
+        uses: actions/checkout@v6
+        with:
+          repository: Muniverse-official/cover-pick-attendee
+          path: qa-peer-fans
+          persist-credentials: false
+      - name: Check registration and delivery regressions before publishing
+        env:
+          FANS_PICK_SOURCE: ${{ github.workspace }}/qa-peer-fans/app.js
+        run: |
+          node tools/qa-edge.mjs
+          node tools/qa-remediation.mjs
+          node tools/qa-worker.mjs
       - name: Configure Pages
         uses: actions/configure-pages@v6
         with:

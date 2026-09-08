@@ -1,0 +1,5 @@
+
+# Local QA execution evidence is kept outside release source.
+tools/qa-*-results.json
+qa-peer-fans/
+supabase/.temp/

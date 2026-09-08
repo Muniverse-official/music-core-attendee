@@ -7,9 +7,9 @@
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://kkaoerbblpuszptiibvo.supabase.co; img-src 'self' data:; base-uri 'none'; object-src 'none'; form-action 'none'; upgrade-insecure-requests">
 <title>Muniverse 방청 통합 관리자</title>
-<link rel="stylesheet" href="./rounds-v5.css?v=20260908-rounds5">
-<script src="./rounds-v5.js?v=20260908-rounds5" defer></script>
-<script src="./round-order.js?v=20260908-sheetlink1" defer></script>
+<link rel="stylesheet" href="./rounds-v5.css?v=20260908-qa9">
+<script src="./rounds-v5.js?v=20260908-qa9" defer></script>
+<script src="./round-order.js?v=20260908-qa9" defer></script>
 </head>
 <body>
 <main class="shell">
@@ -36,6 +36,7 @@
 <p id="roundNotice" class="notice"></p>
 <div class="stats"><div><span>이 회차 당첨자</span><strong id="totalCount">0</strong></div><div><span>등록 완료</span><strong id="registeredCount">0</strong></div><div><span>미등록</span><strong id="pendingCount">0</strong></div></div>
 </section>
+<section class="card" aria-label="시트·알림 전달 현황"><h2>시트·알림 전달</h2><p id="deliveryHealth" role="status" class="message"></p><p id="deliveryCounts" class="muted"></p><div id="deliveryJobs"></div><p id="deliveryMessage" role="status" class="message"></p></section>
 <nav class="detail-tabs" role="tablist" aria-label="회차 내부 관리"><button id="settingsTab" type="button" role="tab" data-pane="settings" aria-selected="true" aria-controls="settingsPane">기간·공개 설정</button><button id="winnersTab" type="button" role="tab" data-pane="winners" aria-selected="false" aria-controls="winnersPane">당첨자 명단</button><button id="historyTab" type="button" role="tab" data-pane="history" aria-selected="false" aria-controls="historyPane">변경 이력</button></nav>
 <section id="settingsPane" role="tabpanel" aria-labelledby="settingsTab" class="card">
 <div class="section-head"><h2>이 회차의 일정 및 공개 설정</h2><span class="badge">KST · UTC+9</span></div>
@@ -60,6 +61,7 @@
 </section>
 <dialog id="createDialog"><form id="createForm"><h2>새 회차 만들기</h2><label>회차 이름<input id="newRoundTitle" maxlength="120" required></label><label class="check"><input id="copySettings" type="checkbox">선택한 회차 설정 복사: <span id="copySourceLabel"></span></label><p class="notice">새 회차는 미공개로 생성됩니다. 당첨자 명단·개인정보는 복사하지 않고, 기존 공개 회차도 변경하지 않습니다.</p><p class="muted small">설정 복사를 선택하면 기간·방청일도 복사됩니다. 새 일정으로 수정한 뒤 공개해 주세요. 테스트 모드는 복사하지 않습니다.</p><p id="createMessage" role="status" class="message"></p><div class="actions"><button id="createCancel" class="secondary" type="button">취소</button><button type="submit">회차 만들기</button></div></form></dialog>
 <dialog id="editDialog"><form id="editForm"><h2>당첨자 수정</h2><p class="notice">소속 회차: <strong id="editRoundName"></strong></p><label>이메일<input id="editEmail" type="email" required maxlength="254"></label><label>닉네임<input id="editNickname" required maxlength="80"></label><p class="muted small">소속 회차와 기존 등록완료 상태는 유지됩니다. 발급돼 있던 당첨 확인 인증은 만료 처리됩니다. 방청일은 회차 설정에서 관리합니다.</p><p id="editMessage" role="status" class="message"></p><div class="actions"><button id="editCancel" class="secondary" type="button">취소</button><button type="submit">수정 저장</button></div></form></dialog>
+<dialog id="confirmDialog" aria-labelledby="confirmTitle"><h2 id="confirmTitle">작업 확인</h2><p id="confirmText" class="confirm-copy"></p><div class="actions"><button id="confirmCancel" type="button" class="secondary">취소</button><button id="confirmAccept" type="button">계속</button></div></dialog>
 <footer>© Muniverse · 모든 일정은 한국시간(KST) 기준</footer>
 </main>
 </body>
