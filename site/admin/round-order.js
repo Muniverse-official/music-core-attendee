@@ -3,11 +3,31 @@
 const list=document.getElementById('roundList');
 if(!list)return;
 
+const sheetLinks=Object.freeze({
+  music_core:'https://docs.google.com/spreadsheets/d/191598ZPdnCdDlvoa8aFGGNPmT1_xqEZXOq7vvEEahp0/edit',
+  fans_pick:'https://docs.google.com/spreadsheets/d/1GsFyGTLeJV62T9xsfFyvsxOljRy3Egr7MkahpttlrPs/edit'
+});
+const publicLink=document.getElementById('publicLink');
+let sheetLink=document.getElementById('sheetLink');
+if(!sheetLink&&publicLink){
+  sheetLink=document.createElement('a');
+  sheetLink.id='sheetLink';
+  sheetLink.target='_blank';
+  sheetLink.rel='noopener noreferrer';
+  publicLink.after(sheetLink);
+}
+
 const initialized=new Set();
 let scheduled=false;
 
 function program(){
   return document.querySelector('[data-program][aria-pressed="true"]')?.dataset.program||'music_core';
+}
+function syncSheetLink(p=program()){
+  if(!sheetLink)return;
+  sheetLink.href=sheetLinks[p]||sheetLinks.music_core;
+  sheetLink.textContent=p==='fans_pick'?'FANS PICK 개인정보 시트 열기 ↗':'음중 개인정보 시트 열기 ↗';
+  sheetLink.setAttribute('aria-label',(p==='fans_pick'?'FANS PICK':'쇼! 음악중심')+' 당첨자 개인정보 Google 스프레드시트 열기');
 }
 function numberOf(button){
   const text=button.querySelector('strong')?.textContent||'';
@@ -23,6 +43,7 @@ function schedule(){
   requestAnimationFrame(()=>{
     scheduled=false;
     sortLatestFirst();
+    syncSheetLink();
   });
 }
 function sortLatestFirst(){
@@ -33,8 +54,6 @@ function sortLatestFirst(){
     .map((button,index)=>({button,index,n:numberOf(button),title:titleOf(button)}))
     .sort((a,b)=>b.n-a.n||b.title.localeCompare(a.title,'ko',{numeric:true})||a.index-b.index);
 
-  // Only touch the DOM when the order actually differs. This prevents the
-  // MutationObserver from triggering an endless render/reorder loop.
   const alreadySorted=buttons.every((button,index)=>button===ranked[index].button);
   if(!alreadySorted){
     const fragment=document.createDocumentFragment();
@@ -63,9 +82,12 @@ new MutationObserver(mutations=>{
 document.querySelectorAll('[data-program]').forEach(button=>button.addEventListener('click',()=>{
   const p=button.dataset.program;
   if(p)initialized.delete(p);
+  syncSheetLink(p);
   schedule();
 },{capture:true}));
 
+syncSheetLink();
 schedule();
 document.documentElement.dataset.roundOrder='latest-first-safe';
+document.documentElement.dataset.sheetLinks='program-specific';
 })();
