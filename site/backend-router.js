@@ -20,10 +20,18 @@
   function platformFailure(response) {
     return response.status >= 500 && !response.headers.get('x-attendee-revision');
   }
+  function actionOf(url) {
+    try { return new URL(url).searchParams.get('action') || ''; } catch { return ''; }
+  }
   const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  async function spread(url) {
+    const ms=Number(window.AttendeeAvailability?.burstDelay?.(actionOf(url))||0);
+    if(Number.isFinite(ms)&&ms>0)await wait(Math.min(ms,8000));
+  }
   window.fetch = async (input, init) => {
     if (typeof input === 'string' || input instanceof URL) {
       const original=String(input),routed=route(original);
+      if(routed!==original)await spread(routed);
       const response=await nativeFetch(routed,init);
       if(routed!==original&&platformFailure(response)){await wait(200+Math.random()*800);return nativeFetch(unpin(routed),init)}
       return response;
@@ -32,6 +40,7 @@
       const routedUrl = route(input.url);
       if (routedUrl !== input.url) {
         const first=new Request(routedUrl,input),second=first.clone();
+        await spread(routedUrl);
         const response=await nativeFetch(first,init);
         if(platformFailure(response)){await wait(200+Math.random()*800);return nativeFetch(new Request(unpin(routedUrl),second),init)}
         return response;
