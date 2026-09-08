@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/attendee-ui-smoke.yml'
       - 'tools/attendee-ui-smoke.mjs'
+      - 'site/admin/**'
 permissions:
   contents: read
 jobs:
