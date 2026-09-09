@@ -1,4 +1,4 @@
-const REV='20260909-delivery-v4-legacy-bridge';
+const REV='20260909-delivery-v5-musiccore-v2-bridge';
 type O=Record<string,any>;
 function env(){const base=Deno.env.get('SUPABASE_URL'),key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');if(!base||!key)throw new Error('ENV');return{base,key};}
 async function req(path:string,init:RequestInit={}){
@@ -21,7 +21,7 @@ async function health(program:string,c:O){
     const r=await fetch(c.apps_script_url,{cache:'no-store',signal:AbortSignal.timeout(12000)}),j=await r.json();
     version=Number.isInteger(j.version)?j.version:null;
     const v9=r.ok&&j.ok===true&&j.service==='muniverse-attendee-dispatcher'&&j.version>=9&&j.sheetMode==='round-tabs'&&j.deliveryState==='per-row-v1'&&j.textCells===true;
-    const musicCoreV2=program==='music_core'&&r.ok&&j.ok===true&&j.service==='muniverse-attendee-dispatcher'&&j.version===2;
+    const musicCoreV2=program==='music_core'&&r.ok&&j.ok===true&&j.service==='music-core-attendee-webhook'&&j.version===2&&j.sheet==='방청자 등록';
     if(v9){status='contract_ready';mode='round_v9';error='';}
     else if(musicCoreV2){status='legacy_bridge_ready';mode='music_core_v2_bridge';error='';}
     else{status='upgrade_required';error='APPS_SCRIPT_UPGRADE_REQUIRED';}
@@ -30,7 +30,6 @@ async function health(program:string,c:O){
   return{ready:status==='contract_ready'||status==='legacy_bridge_ready',error,mode,version,status};
 }
 async function deliver(row:O,c:O,h:O){
-  // Deletion locks/refuses active claims. Recheck before any external transmission as well.
   if(await rpc('attendee_delivery_is_current',{p_id:row.id})!==true)return{ok:false,sheet:false,email:false,error:'DELIVERY_CANCELLED'};
   const legacy=h.mode==='music_core_v2_bridge';
   const version=legacy?2:9;
@@ -38,13 +37,9 @@ async function deliver(row:O,c:O,h:O){
   let j:O={};try{j=await r.json();}catch{}
   const sheet=r.ok&&j.sheetUpdated===true;
   if(legacy){
-    // The verified v2 Music Core deployment writes to the hidden compatibility source tab.
-    // Its idempotency key prevents duplicate rows. Internal notification email is not a
-    // completion requirement; a confirmed sheet write (including duplicate:true) closes the job.
     const ok=r.ok&&j.ok===true&&sheet;
     return{ok,sheet,email:ok,error:ok?'':`HTTP_${r.status}:${String(j.code||'LEGACY_DELIVERY_FAILED').slice(0,120)}`,busy:j.code==='BUSY'};
   }
-  // v9 keeps partial sheet/email completion semantics.
   const email=r.ok&&j.emailSent===true,ok=r.ok&&j.ok===true&&sheet&&email;
   return{ok,sheet,email,error:ok?'':`HTTP_${r.status}:${String(j.code||'DELIVERY_FAILED').slice(0,120)}`,busy:j.code==='BUSY'};
 }
@@ -56,13 +51,10 @@ Deno.serve(async r=>{
     await Promise.all(programs.map(async p=>{configs[p]=await config(p);healths[p]=await health(p,configs[p]);}));
     const rows=await rpc('attendee_delivery_claim',{p_limit:20}) as O[];
     let done=0,failed=0,deferred=0;const deadline=performance.now()+45000;
-    // One serial queue per Apps Script URL; distinct script deployments can progress together.
     const groups=new Map<string,O[]>();for(const row of rows){const url=configs[row.program].apps_script_url||row.program;groups.set(url,[...(groups.get(url)||[]),row]);}
     await Promise.all([...groups.values()].map(async items=>{
       for(const row of items){
-        if(!healths[row.program].ready||performance.now()>deadline){
-          await rpc('attendee_delivery_defer',{p_id:row.id,p_error:healths[row.program].error||'WORKER_TIME_BUDGET',p_seconds:60});deferred++;continue;
-        }
+        if(!healths[row.program].ready||performance.now()>deadline){await rpc('attendee_delivery_defer',{p_id:row.id,p_error:healths[row.program].error||'WORKER_TIME_BUDGET',p_seconds:60});deferred++;continue;}
         try{
           const d=await deliver(row,configs[row.program],healths[row.program]);
           if(d.busy){await rpc('attendee_delivery_defer',{p_id:row.id,p_error:'APPS_SCRIPT_BUSY',p_seconds:60});deferred++;continue;}
