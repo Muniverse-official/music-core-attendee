@@ -114,6 +114,7 @@
     state.selectionType = value === 'reserve' ? 'reserve' : 'primary';
     document.body.dataset.selectionType = state.selectionType;
     $('alreadyReserveNote')?.classList.toggle('hidden',!isReserve());
+    applyLanguage();
   }
 
   function setStep(number) { document.querySelectorAll('.step').forEach((element) => element.classList.toggle('active', Number(element.dataset.step) === number)); }
