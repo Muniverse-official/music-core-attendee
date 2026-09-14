@@ -4,7 +4,7 @@
 
   const API = 'https://tcxugltvmatbgsmcepso.supabase.co/functions/v1/music-core-attendee';
   const $ = (id) => document.getElementById(id);
-  const state = { token: '', accountEmail: '', nickname: '', eventDate: '', eventDateTba: false, busy: false };
+  const state = { selectionType: 'primary', token: '', accountEmail: '', nickname: '', eventDate: '', eventDateTba: false, busy: false };
   const previewStep = new URLSearchParams(location.search).get('preview');
   const lang = () => (window.MC_COPY[$('lang')?.value] ? $('lang').value : 'en');
   const t = (key) => window.MC_COPY[lang()][key];
@@ -33,20 +33,88 @@
     'zh-CN':'您未中奖。'
   }[lang()] || 'You were not selected as a winner.');
 
-  const reserveCopy = () => ({
-    ko: ['예비 당첨자입니다.', '본 당첨자가 기한 내 방청자 정보를 등록하지 않아 결원이 발생할 경우, 예비 당첨자에게 개별 연락드립니다.', '예비 당첨은 방청 확정을 의미하지 않으며, 결원 발생 여부에 따라 연락을 받지 못하실 수 있습니다.', '다른 계정 확인'],
-    en: ['You are on the reserve list.', 'If a selected winner does not register their attendee information by the deadline and a place becomes available, reserve winners will be contacted individually.', 'Being on the reserve list does not guarantee attendance. You may not be contacted if no place becomes available.', 'Check another account'],
-    ja: ['補欠当選者です。', '本当選者が期限内に観覧者情報を登録せず欠員が出た場合、補欠当選者に個別にご連絡します。', '補欠当選は観覧の確定ではありません。欠員状況によっては、ご連絡を差し上げない場合があります。', '別のアカウントを確認'],
-    'zh-TW': ['您已入選候補名單。', '若正取中獎者未於期限內登記觀眾資料而出現空缺，我們將個別聯絡候補中獎者。', '入選候補名單不代表觀眾資格已確定；視空缺情況，您可能不會收到通知。', '查詢其他帳號'],
-    'zh-CN': ['您已入选候补名单。', '若正式中奖者未在期限内登记观众资料而出现空缺，我们将单独联系候补中奖者。', '入选候补名单不代表观众资格已确定；视空缺情况，您可能不会收到通知。', '查询其他账号']
-  }[lang()]);
-  function reserveLanguage() { ['reserveTitle','reserveBody','reserveNote','reserveBack'].forEach((id,i)=>setText(id,reserveCopy()[i])); }
-  function showReserve() {
-    state.token='';state.accountEmail='';state.nickname='';state.reauthPending=false;
-    for(const id of ['step1','step2','done','already'])$(id)?.classList.add('hidden');
-    document.body.classList.remove('already-state');document.body.classList.add('reserve-state');
-    $('reserve')?.classList.remove('hidden');reserveLanguage();setStep(1);
-    $('reserveTitle')?.focus({preventScroll:true});$('reserve')?.scrollIntoView({behavior:'smooth',block:'start'});
+  const reserveTranslations = {
+  "ko": {
+    "title": "예비 당첨자로 선정되셨습니다.",
+    "body": "본 당첨자의 미등록으로 공석이 발생할 경우, 예비 당첨자 중 추가 당첨자를 선정해 개별 연락드립니다.",
+    "instruction": "추가 당첨 시 원활한 방청 안내를 위해 아래에서 방청자 정보를 미리 등록해 주세요.",
+    "note": "정보 등록만으로 방청이 확정되는 것은 아니며, 추가 당첨된 분께 개별 안내드립니다.",
+    "info": "추가 당첨 시 본인 확인과 방청 안내에 사용할 정보를 입력해 주세요.",
+    "contact": "추가 당첨 시 등록하신 연락처로 개별 안내드립니다. 한국 번호가 없는 경우 X DM 또는 이메일로 안내드립니다.",
+    "doneTitle": "예비 당첨자 정보 등록 완료",
+    "doneDesc": "방청자 정보가 정상적으로 등록되었습니다.",
+    "doneMain": "추가 당첨 시 개별 연락드립니다.",
+    "doneSub": "정보 등록만으로 방청이 확정되는 것은 아닙니다. 추가 당첨된 경우 등록하신 정보로 안내드리며, 다시 입력하실 필요는 없습니다.",
+    "already": "예비 당첨자 정보가 이미 등록되었습니다."
+  },
+  "en": {
+    "title": "You have been selected as a reserve winner.",
+    "body": "If places become available because primary winners do not register, we will select additional winners from the reserve list and contact them individually.",
+    "instruction": "Please register your attendee information below in advance so we can provide attendance instructions if you are selected.",
+    "note": "Registering your information does not confirm attendance. Only those selected as additional winners will be contacted individually.",
+    "info": "Enter the information we will use to verify your identity and provide attendance instructions if you are selected.",
+    "contact": "If you are selected as an additional winner, we will contact you using the details you provide. If you do not have a Korean phone number, we will use X DM or email.",
+    "doneTitle": "Reserve winner information registered",
+    "doneDesc": "Your attendee information has been saved.",
+    "doneMain": "We will contact you if you are selected as an additional winner.",
+    "doneSub": "Registering your information does not confirm attendance. If selected, we will use your saved information to contact you. You will not need to enter it again.",
+    "already": "Your reserve winner information has already been registered."
+  },
+  "ja": {
+    "title": "補欠当選者に選ばれました。",
+    "body": "本当選者の未登録により欠員が出た場合、補欠当選者の中から追加当選者を選び、個別にご連絡します。",
+    "instruction": "追加当選時にスムーズに観覧をご案内できるよう、下記より観覧者情報を事前にご登録ください。",
+    "note": "情報の登録だけでは観覧は確定しません。追加当選された方に個別にご案内します。",
+    "info": "追加当選時の本人確認と観覧案内に使用する情報をご入力ください。",
+    "contact": "追加当選された場合、ご登録の連絡先に個別にご案内します。韓国の電話番号をお持ちでない場合は、XのDMまたはメールでご案内します。",
+    "doneTitle": "補欠当選者情報の登録が完了しました",
+    "doneDesc": "観覧者情報が正常に登録されました。",
+    "doneMain": "追加当選された場合、個別にご連絡します。",
+    "doneSub": "情報の登録だけでは観覧は確定しません。追加当選時には、ご登録済みの情報をもとにご案内します。再入力は不要です。",
+    "already": "補欠当選者情報はすでに登録されています。"
+  },
+  "zh-TW": {
+    "title": "您已入選候補名單。",
+    "body": "若正取中獎者未完成登記而出現空缺，我們將從候補名單中選出遞補中獎者，並個別聯絡。",
+    "instruction": "為方便遞補中獎後提供觀眾入場資訊，請先在下方登記觀眾資料。",
+    "note": "完成資料登記不代表已確定取得觀眾資格。我們僅會個別通知遞補中獎者。",
+    "info": "請填寫遞補中獎後用於身分確認及觀眾入場通知的資料。",
+    "contact": "若您遞補中獎，我們將透過您登記的聯絡方式個別通知。若沒有韓國手機號碼，將透過 X 私訊或電子郵件通知。",
+    "doneTitle": "候補中獎者資料登記完成",
+    "doneDesc": "觀眾資料已成功儲存。",
+    "doneMain": "若您遞補中獎，我們將個別聯絡。",
+    "doneSub": "完成資料登記不代表已確定取得觀眾資格。遞補中獎後，我們將使用已登記的資料聯絡您，無須再次填寫。",
+    "already": "您的候補中獎者資料已完成登記。"
+  },
+  "zh-CN": {
+    "title": "您已入选候补名单。",
+    "body": "若正式中奖者未完成登记而出现空缺，我们将从候补名单中选出递补中奖者，并单独联系。",
+    "instruction": "为方便递补中奖后提供观众入场信息，请先在下方登记观众信息。",
+    "note": "完成信息登记不代表已确定获得观众资格。我们仅会单独通知递补中奖者。",
+    "info": "请填写递补中奖后用于身份核验及观众入场通知的信息。",
+    "contact": "若您递补中奖，我们将通过您登记的联系方式单独通知。如没有韩国手机号，将通过 X 私信或电子邮件通知。",
+    "doneTitle": "候补中奖者信息登记完成",
+    "doneDesc": "观众信息已成功保存。",
+    "doneMain": "若您递补中奖，我们将单独联系。",
+    "doneSub": "完成信息登记不代表已确定获得观众资格。递补中奖后，我们将使用已登记的信息联系您，无须再次填写。",
+    "already": "您的候补中奖者信息已完成登记。"
+  }
+};
+  const isReserve = () => state.selectionType === 'reserve';
+  const reserveCopy = () => reserveTranslations[lang()];
+  function reserveLanguage() {
+    const c = reserveCopy();
+    for (const [id,key] of [['reserveTitle','title'],['reserveBody','body'],['reserveInstruction','instruction'],['reserveNote','note']]) setText(id,c[key]);
+    if (!isReserve()) return;
+    setText('infoDesc',c.info); setText('contactHint',c.contact);
+    for (const id of ['doneTitle','doneDesc','doneMain','doneSub']) setText(id,c[id]);
+    setText('alreadyMessage',c.already); setText('alreadyReserveNote',c.doneSub);
+  }
+  function setSelection(value) {
+    state.selectionType = value === 'reserve' ? 'reserve' : 'primary';
+    document.body.dataset.selectionType = state.selectionType;
+    $('alreadyReserveNote')?.classList.toggle('hidden',!isReserve());
+    applyLanguage();
   }
 
   function setStep(number) { document.querySelectorAll('.step').forEach((element) => element.classList.toggle('active', Number(element.dataset.step) === number)); }
@@ -58,7 +126,7 @@
     setText('nameLabel', t('name')); setText('nationalityLabel', t('nationality')); setText('birthLabel', t('birth')); setText('phoneLabel', t('phone')); setText('contactLabel', t('contact')); setText('contactHint', t('contactHint'));
     setText('noticeText', t('notice'), true); setText('submitBtnText', t('submit')); setText('doneTitle', t('doneTitle')); setText('doneDesc', t('doneDesc')); setText('doneMain', t('doneMain')); setText('doneSub', t('doneSub'));
     setText('alreadyMessage', t('already')); setText('doneEventLabel', t('eventDate')); if (state.eventDateTba) { setText('eventDate', tbaText()); setText('doneEventDate', tbaText()); }
-    reserveLanguage();window.dispatchEvent(new CustomEvent('mc-language-change'));
+    window.dispatchEvent(new CustomEvent('mc-language-change'));reserveLanguage();
   }
   function verifyReady() { const ready = Boolean($('consent')?.checked && $('email')?.value.trim() && $('nickname')?.value.trim()); if ($('verifyBtn')) $('verifyBtn').disabled = !ready || state.busy; }
   function busy(button, on) { state.busy = on; button?.classList.toggle('busy', on); if (button) button.disabled = on; }
@@ -69,7 +137,7 @@
     try { const response = await fetch(`${API}?action=${encodeURIComponent(action)}`, { method:'POST', headers:{'content-type':'application/json','x-music-core-request':'1','x-request-id':crypto.randomUUID()}, body:JSON.stringify(payload), cache:'no-store', credentials:'omit', referrerPolicy:'no-referrer', signal:controller.signal }); let data={}; try{data=await response.json();}catch{} return {response,data}; }
     finally { clearTimeout(timeout); }
   }
-  function errorText(code) { if(code==='RESERVE_NOT_ELIGIBLE')return reserveCopy()[1]; if (code==='NOT_OPEN'||code==='CLOSED') return windowText(code); if (code==='WINNER_PARTIAL_MISMATCH') return partialMismatchText(); if (code==='WINNER_NOT_LISTED'||code==='WINNER_MISMATCH'||code==='IDENTITY_MISMATCH') return notListedText(); if (code==='RATE_LIMITED'||code==='TOO_MANY_ATTEMPTS') return t('rate'); if (code==='CONSENT_REQUIRED') return t('consentNeeded'); if (['SESSION_INVALID','SESSION_EXPIRED','INVALID_SESSION'].includes(code)) return t('session'); if (code==='UNDER_15') return t('under15'); return t('network'); }
+  function errorText(code) { if (code==='NOT_OPEN'||code==='CLOSED') return windowText(code); if (code==='WINNER_PARTIAL_MISMATCH') return partialMismatchText(); if (code==='WINNER_NOT_LISTED'||code==='WINNER_MISMATCH'||code==='IDENTITY_MISMATCH') return notListedText(); if (code==='RATE_LIMITED'||code==='TOO_MANY_ATTEMPTS') return t('rate'); if (code==='CONSENT_REQUIRED') return t('consentNeeded'); if (['SESSION_INVALID','SESSION_EXPIRED','INVALID_SESSION'].includes(code)) return t('session'); if (code==='UNDER_15') return t('under15'); return t('network'); }
   function showVerifyError(message, code) {
     if (!message) return;
     message.classList.add('error');
@@ -84,14 +152,13 @@
       message.appendChild(result);
     }
   }
-  function reauthenticate(){state.token='';state.reauthPending=true;document.body.classList.remove('already-state');$('step2')?.classList.add('hidden');$('step1')?.classList.remove('hidden');setText('verifyMessage',t('session'));$('step1')?.scrollIntoView({behavior:'smooth',block:'start'});verifyReady();}
-  function showStep2() { document.body.classList.remove('already-state'); $('step1')?.classList.add('hidden'); $('step2')?.classList.remove('hidden'); $('done')?.classList.add('hidden'); $('already')?.classList.add('hidden'); setStep(2); $('step2')?.scrollIntoView({behavior:'smooth',block:'start'}); }
-  function showDone(already=false,eventDate='') { $('step1')?.classList.add('hidden'); $('step2')?.classList.add('hidden'); $('done')?.classList.toggle('hidden',already); $('already')?.classList.toggle('hidden',!already); document.body.classList.toggle('already-state',already); if(already){setText('alreadyMessage',t('already'));$('already')?.scrollIntoView({behavior:'smooth',block:'center'});return;} setStep(3); setText('doneTitle',t('doneTitle'));setText('doneDesc',t('doneDesc'));setText('doneMain',t('doneMain'));setText('doneSub',t('doneSub'));setText('doneEventDate',state.eventDateTba?tbaText():(eventDate||state.eventDate||'-'));$('done')?.scrollIntoView({behavior:'smooth',block:'center'}); }
+  function reauthenticate(){$('reserve')?.classList.add('hidden');state.token='';state.reauthPending=true;document.body.classList.remove('already-state');$('step2')?.classList.add('hidden');$('step1')?.classList.remove('hidden');setText('verifyMessage',t('session'));$('step1')?.scrollIntoView({behavior:'smooth',block:'start'});verifyReady();}
+  function showStep2() { $('reserve')?.classList.toggle('hidden',!isReserve());reserveLanguage();document.body.classList.remove('already-state'); $('step1')?.classList.add('hidden'); $('step2')?.classList.remove('hidden'); $('done')?.classList.add('hidden'); $('already')?.classList.add('hidden'); setStep(2); (isReserve()?$('reserve'):$('step2'))?.scrollIntoView({behavior:'smooth',block:'start'}); }
+  function showDone(already=false,eventDate='') { $('reserve')?.classList.add('hidden'); $('step1')?.classList.add('hidden'); $('step2')?.classList.add('hidden'); $('done')?.classList.toggle('hidden',already); $('already')?.classList.toggle('hidden',!already); document.body.classList.toggle('already-state',already); if(already){setText('alreadyMessage',t('already'));reserveLanguage();$('already')?.scrollIntoView({behavior:'smooth',block:'center'});return;} setStep(3); setText('doneTitle',t('doneTitle'));setText('doneDesc',t('doneDesc'));setText('doneMain',t('doneMain'));setText('doneSub',t('doneSub'));setText('doneEventDate',state.eventDateTba?tbaText():(eventDate||state.eventDate||'-'));reserveLanguage();$('done')?.scrollIntoView({behavior:'smooth',block:'center'}); }
   const validEmail=(value)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   function ageOnDate(birth,eventDate){if(!birth||!eventDate||!/^\d{4}-\d{2}-\d{2}$/.test(eventDate))return NaN;const b=birth.split('-').map(Number),e=eventDate.split('-').map(Number);if([...b,...e].some(n=>!Number.isFinite(n)))return NaN;let age=e[0]-b[0];if(e[1]<b[1]||(e[1]===b[1]&&e[2]<b[2]))age--;return age;}
-  async function verify(){const message=$('verifyMessage');if(message){message.textContent='';message.classList.remove('error');}const email=$('email')?.value.trim()||'',nickname=$('nickname')?.value.trim()||'';if(!email||!nickname){if(message)message.textContent=t('missingIdentity');return}if(!validEmail(email)){if(message)message.textContent=t('invalidEmail');return}if(!$('consent')?.checked){if(message)message.textContent=t('consentNeeded');return}busy($('verifyBtn'),true);try{const{response,data}=await call('verify',{email,nickname,privacy_consent:true,website:$('website')?.value||''});if(data.code==='ALREADY_SUBMITTED'){showDone(true);return}if(!response.ok||!data.ok){if(['WINNER_PARTIAL_MISMATCH','WINNER_NOT_LISTED','WINNER_MISMATCH','IDENTITY_MISMATCH'].includes(data.code)){showVerifyError(message,data.code);$('email')?.focus();return}if(message)message.textContent=errorText(data.code);return}if(data.selectionType==='reserve'){showReserve();return}state.token=data.token||data.verificationToken||'';state.accountEmail=email;state.nickname=nickname;state.eventDate=data.eventDate||'';state.eventDateTba=data.eventDateTba===true;if(!state.token){if(message)message.textContent=t('network');return}if($('contactEmail')&&(!state.reauthPending||!$('contactEmail').value))$('contactEmail').value=email;state.reauthPending=false;setText('eventDate',state.eventDateTba?tbaText():state.eventDate);showStep2()}catch{if(message)message.textContent=t('network')}finally{busy($('verifyBtn'),false);verifyReady()}}
-  async function submit(){const message=$('submitMessage');if(message)message.textContent='';if(previewStep==='step2'){if(message)message.textContent=t('preview');return}const contactValues=window.AttendeeFields?.values?.()||{nationality:$('nationality')?.value||'',phone:$('phone')?.value||''};const fields={name:$('name')?.value.trim()||'',nationality:contactValues.nationality||'',birth_date:$('birthDate')?.value||'',phone:contactValues.phone||'',contact_email:$('contactEmail')?.value.trim()||'',x_account:$('xAccount')?.value.trim()||''};if(!fields.name||!fields.nationality||!fields.birth_date||!fields.phone||!fields.contact_email){if(message)message.textContent=t('missing');return}if(!validEmail(fields.contact_email)){if(message)message.textContent=t('invalidEmail');return}if(!window.AttendeeFields?.valid?.()){if(message)message.textContent=t('invalidPhone');return}if(!state.eventDateTba){const age=ageOnDate(fields.birth_date,state.eventDate);if(!Number.isFinite(age)||age<15){if(message)message.textContent=t('under15');return}}busy($('submitBtn'),true);try{const{response,data}=await call('submit',{token:state.token,verification_token:state.token,account_email:state.accountEmail,muniverse_nickname:state.nickname,privacy_consent:true,website:$('website')?.value||'',...fields});if(data.code==='ALREADY_SUBMITTED'){showDone(true);return}if(!response.ok||!data.ok){if(message)message.textContent=errorText(data.code);if(['SESSION_INVALID','SESSION_EXPIRED','INVALID_SESSION'].includes(data.code))reauthenticate();return}state.eventDateTba=data.eventDateTba===true||state.eventDateTba;showDone(false,data.eventDate||state.eventDate)}catch{if(message)message.textContent=t('network')}finally{busy($('submitBtn'),false)}}
+  async function verify(){const message=$('verifyMessage');if(message){message.textContent='';message.classList.remove('error');}const email=$('email')?.value.trim()||'',nickname=$('nickname')?.value.trim()||'';if(!email||!nickname){if(message)message.textContent=t('missingIdentity');return}if(!validEmail(email)){if(message)message.textContent=t('invalidEmail');return}if(!$('consent')?.checked){if(message)message.textContent=t('consentNeeded');return}busy($('verifyBtn'),true);try{const{response,data}=await call('verify',{email,nickname,privacy_consent:true,website:$('website')?.value||''});if(data.code==='ALREADY_SUBMITTED'){setSelection(data.selectionType||state.selectionType);showDone(true);return}if(!response.ok||!data.ok){if(['WINNER_PARTIAL_MISMATCH','WINNER_NOT_LISTED','WINNER_MISMATCH','IDENTITY_MISMATCH'].includes(data.code)){showVerifyError(message,data.code);$('email')?.focus();return}if(message)message.textContent=errorText(data.code);return}setSelection(data.selectionType);state.token=data.token||data.verificationToken||'';state.accountEmail=email;state.nickname=nickname;state.eventDate=data.eventDate||'';state.eventDateTba=data.eventDateTba===true;if(!state.token){if(message)message.textContent=t('network');return}if($('contactEmail')&&(!state.reauthPending||!$('contactEmail').value))$('contactEmail').value=email;state.reauthPending=false;setText('eventDate',state.eventDateTba?tbaText():state.eventDate);showStep2()}catch{if(message)message.textContent=t('network')}finally{busy($('verifyBtn'),false);verifyReady()}}
+  async function submit(){const message=$('submitMessage');if(message)message.textContent='';if(previewStep==='step2'){if(message)message.textContent=t('preview');return}const contactValues=window.AttendeeFields?.values?.()||{nationality:$('nationality')?.value||'',phone:$('phone')?.value||''};const fields={name:$('name')?.value.trim()||'',nationality:contactValues.nationality||'',birth_date:$('birthDate')?.value||'',phone:contactValues.phone||'',contact_email:$('contactEmail')?.value.trim()||'',x_account:$('xAccount')?.value.trim()||''};if(!fields.name||!fields.nationality||!fields.birth_date||!fields.phone||!fields.contact_email){if(message)message.textContent=t('missing');return}if(!validEmail(fields.contact_email)){if(message)message.textContent=t('invalidEmail');return}if(!window.AttendeeFields?.valid?.()){if(message)message.textContent=t('invalidPhone');return}if(!state.eventDateTba){const age=ageOnDate(fields.birth_date,state.eventDate);if(!Number.isFinite(age)||age<15){if(message)message.textContent=t('under15');return}}busy($('submitBtn'),true);try{const{response,data}=await call('submit',{token:state.token,verification_token:state.token,account_email:state.accountEmail,muniverse_nickname:state.nickname,privacy_consent:true,website:$('website')?.value||'',...fields});if(data.code==='ALREADY_SUBMITTED'){setSelection(data.selectionType||state.selectionType);showDone(true);return}if(!response.ok||!data.ok){if(message)message.textContent=errorText(data.code);if(['SESSION_INVALID','SESSION_EXPIRED','INVALID_SESSION'].includes(data.code))reauthenticate();return}setSelection(data.selectionType||state.selectionType);state.eventDateTba=data.eventDateTba===true||state.eventDateTba;showDone(false,data.eventDate||state.eventDate)}catch{if(message)message.textContent=t('network')}finally{busy($('submitBtn'),false)}}
   function showPreview(){if(previewStep!=='step2')return;state.accountEmail='preview@muniverse.io';state.nickname='DESIGN PREVIEW';state.eventDate='2026-09-19';if($('contactEmail'))$('contactEmail').value=state.accountEmail;setText('eventDate',`${state.eventDate} · PREVIEW`);showStep2();const note=document.createElement('p');note.className='preview-notice';note.textContent=t('preview');$('step2')?.insertBefore(note,$('step2')?.children[1]||null)}
-  $('reserveBack')?.addEventListener('click',()=>{$('reserve')?.classList.add('hidden');document.body.classList.remove('reserve-state');$('step1')?.classList.remove('hidden');$('email').value='';$('nickname').value='';$('consent').checked=false;setText('verifyMessage','');verifyReady();$('email')?.focus();});
   $('lang')?.addEventListener('change',applyLanguage);$('consent')?.addEventListener('change',verifyReady);$('email')?.addEventListener('input',verifyReady);$('nickname')?.addEventListener('input',verifyReady);$('verifyBtn')?.addEventListener('click',verify);$('submitBtn')?.addEventListener('click',submit);window.addEventListener('attendee-fields-change',()=>{if($('submitMessage'))$('submitMessage').textContent=''});applyLanguage();verifyReady();showPreview();
 })();

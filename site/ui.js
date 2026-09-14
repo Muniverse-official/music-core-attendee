@@ -36,8 +36,8 @@
     const copy = audienceGuideCopy[currentLanguage()];
     const contactHint = document.getElementById('contactHint');
     const doneSub = document.getElementById('doneSub');
-    if (contactHint) contactHint.textContent = copy.contactHint;
-    if (doneSub) doneSub.textContent = copy.doneSub;
+    if (document.body.dataset.selectionType !== 'reserve' && contactHint) contactHint.textContent = copy.contactHint;
+    if (document.body.dataset.selectionType !== 'reserve' && doneSub) doneSub.textContent = copy.doneSub;
   }
 
   function styleRequiredLabel() {

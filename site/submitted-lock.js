@@ -27,7 +27,7 @@
   const $ = (id) => document.getElementById(id);
   function apply() {
     const copy = COPY[$('lang')?.value] || COPY.ko;
-    if ($('alreadyMessage')) $('alreadyMessage').textContent = copy.message;
+    if (document.body.dataset.selectionType !== 'reserve' && $('alreadyMessage')) $('alreadyMessage').textContent = copy.message;
     if ($('alreadyHelp')) $('alreadyHelp').textContent = copy.help;
   }
 

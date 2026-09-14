@@ -81,8 +81,8 @@
     const privacyText = document.getElementById('privacyText');
 
     if (contactLabel) contactLabel.textContent = copy.contact;
-    if (contactHint) contactHint.textContent = copy.contactHint;
-    if (doneSub) doneSub.textContent = copy.doneSub;
+    if (document.body.dataset.selectionType !== 'reserve' && contactHint) contactHint.textContent = copy.contactHint;
+    if (document.body.dataset.selectionType !== 'reserve' && doneSub) doneSub.textContent = copy.doneSub;
     if (privacyText && copy.privacy) privacyText.innerHTML = copy.privacy;
   }
 
