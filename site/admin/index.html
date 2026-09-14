@@ -7,9 +7,9 @@
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://kkaoerbblpuszptiibvo.supabase.co; img-src 'self' data:; base-uri 'none'; object-src 'none'; form-action 'none'; upgrade-insecure-requests">
 <title>Muniverse 방청 통합 관리자</title>
-<link rel="stylesheet" href="./rounds-v5.css?v=20260914-reserve2">
-<script src="./rounds-v5.js?v=20260914-reserve2" defer></script>
-<script src="./round-order.js?v=20260908-qa9" defer></script>
+<link rel="stylesheet" href="./rounds-v5.css?v=20260914-records1">
+<script src="./rounds-v5.js?v=20260914-records1" defer></script>
+<script src="./round-order.js?v=20260914-records1" defer></script>
 </head>
 <body>
 <main class="shell">
@@ -36,8 +36,8 @@
 <p id="roundNotice" class="notice"></p>
 <div class="stats"><div><span id="primaryCountLabel">본 당첨자</span><strong id="totalCount">0</strong></div><div><span>등록 완료</span><strong id="registeredCount">0</strong></div><div><span>미등록</span><strong id="pendingCount">0</strong></div><div id="reserveStat"><span>예비 당첨자</span><strong id="reserveCount">0</strong></div></div>
 </section>
-<section class="card" aria-label="시트·알림 전달 현황"><h2>시트·알림 전달</h2><p id="deliveryHealth" role="status" class="message"></p><p id="deliveryCounts" class="muted"></p><div id="deliveryJobs"></div><p id="deliveryMessage" role="status" class="message"></p></section>
-<nav class="detail-tabs" role="tablist" aria-label="회차 내부 관리"><button id="settingsTab" type="button" role="tab" data-pane="settings" aria-selected="true" aria-controls="settingsPane">기간·공개 설정</button><button id="winnersTab" type="button" role="tab" data-pane="winners" aria-selected="false" aria-controls="winnersPane">당첨자 명단</button><button id="historyTab" type="button" role="tab" data-pane="history" aria-selected="false" aria-controls="historyPane">변경 이력</button></nav>
+<section id="deliveryPanel" class="card" aria-label="시트·알림 전달 현황"><h2>시트·알림 전달</h2><p id="deliveryHealth" role="status" class="message"></p><p id="deliveryCounts" class="muted"></p><div id="deliveryJobs"></div><p id="deliveryMessage" role="status" class="message"></p></section>
+<nav class="detail-tabs" role="tablist" aria-label="회차 내부 관리"><button id="settingsTab" type="button" role="tab" data-pane="settings" aria-selected="true" aria-controls="settingsPane">기간·공개 설정</button><button id="winnersTab" type="button" role="tab" data-pane="winners" aria-selected="false" aria-controls="winnersPane">당첨자 명단</button><button id="attendeesTab" type="button" role="tab" data-pane="attendees" aria-selected="false" aria-controls="attendeesPane">방청자 정보</button><button id="historyTab" type="button" role="tab" data-pane="history" aria-selected="false" aria-controls="historyPane">변경 이력</button></nav>
 <section id="settingsPane" role="tabpanel" aria-labelledby="settingsTab" class="card">
 <div class="section-head"><h2>이 회차의 일정 및 공개 설정</h2><span class="badge">KST · UTC+9</span></div>
 <form id="settingsForm"><fieldset id="settingsFields">
@@ -56,7 +56,15 @@
 <p id="selectionNotice" class="notice"></p>
 <section class="card"><div class="section-head"><h2 id="addListTitle">본 당첨자 기입 · 일괄 추가</h2><span id="addRoundName" class="badge"></span></div><p class="muted">한 줄에 한 명씩 이메일, 닉네임을 입력하세요. 엑셀 두 열을 그대로 붙여넣어도 됩니다.</p>
 <form id="addForm"><fieldset id="addFields"><label>이 회차에 추가할 명단<textarea id="winnerInput" rows="5" placeholder="user@example.com, 닉네임" required></textarea></label><p class="muted small">한 번에 최대 500명. 같은 회차의 중복 계정은 추가하지 않으며 기존 등록완료 상태도 유지합니다. 다른 회차 명단은 변경하지 않습니다.</p></fieldset><button id="addButton" type="submit">이 회차에 명단 추가</button><p id="addMessage" role="status" class="message"></p></form></section>
-<section class="card list"><div class="section-head"><div><h2 id="listTitle">본 당첨자 명단</h2><span id="listRoundName" class="badge"></span></div><button id="exportCsv" type="button" class="secondary">이 목록 CSV</button></div><div class="filters"><input id="search" aria-label="이메일 또는 닉네임 검색" placeholder="이메일·닉네임 검색"><select id="statusFilter" aria-label="등록상태 필터"><option value="all">전체 상태</option><option value="pending">미등록</option><option value="registered">등록 완료</option></select><span id="visibleCount" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>이메일</th><th>닉네임</th><th id="winnerStatusHeading">등록 상태</th><th>관리</th></tr></thead><tbody id="winnerRows"></tbody></table></div><p id="emptyState" class="empty" hidden>이 회차에 조건에 맞는 당첨자가 없습니다.</p><p class="muted small">수정은 당첨 확인용 명단에 적용됩니다. 등록 완료자를 삭제하면 서버의 개인정보와 인증 기록도 삭제됩니다. 이미 전송된 스프레드시트·메일은 자동 수정·삭제되지 않습니다.</p></section>
+<section class="card list"><div class="section-head"><div><h2 id="listTitle">본 당첨자 명단</h2><span id="listRoundName" class="badge"></span></div><button id="exportCsv" type="button" class="secondary">이 목록 CSV</button></div><div class="filters"><input id="search" aria-label="이메일 또는 닉네임 검색" placeholder="이메일·닉네임 검색"><select id="statusFilter" aria-label="등록상태 필터"><option value="all">전체 상태</option><option value="pending">미등록</option><option value="registered">등록 완료</option></select><span id="visibleCount" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>이메일</th><th>닉네임</th><th id="winnerStatusHeading">등록 상태</th><th>관리</th></tr></thead><tbody id="winnerRows"></tbody></table></div><p id="emptyState" class="empty" hidden>이 회차에 조건에 맞는 당첨자가 없습니다.</p><p id="winnerEditNotice" class="muted small">수정은 당첨 확인용 명단에 적용됩니다. 등록 완료자를 삭제하면 서버의 개인정보와 인증 기록도 삭제됩니다. 이미 전송된 스프레드시트·메일은 자동 수정·삭제되지 않습니다.</p></section>
+</section>
+<section id="attendeesPane" role="tabpanel" aria-labelledby="attendeesTab" class="card" hidden>
+<div class="section-head"><div><h2>방청자 등록 정보</h2><span id="attendeeRoundName" class="badge"></span></div><button id="exportAttendeesCsv" type="button">이 목록 CSV 다운로드</button></div>
+<p class="muted">이 회차에 정보를 등록한 분만 표시됩니다. 본 당첨자와 예비 당첨자의 등록 정보를 여기서 확인하고 내려받으세요.</p>
+<div class="filters"><input id="attendeeSearch" type="search" aria-label="방청자 정보 검색" placeholder="이름·닉네임·이메일·연락처·X 계정 검색"><select id="attendeeSelection" aria-label="방청자 구분 필터"><option value="all">본·예비 전체</option><option value="primary">본 당첨자</option><option value="reserve">예비 당첨자</option></select><span id="attendeeCount" class="muted"></span></div>
+<div class="table-wrap attendee-table-wrap" tabindex="0" aria-label="방청자 등록 정보 표 · 좌우로 스크롤"><table class="attendee-table"><thead><tr><th>구분</th><th>방청일</th><th>Muniverse 닉네임</th><th>가입 이메일</th><th>이름</th><th>만 나이</th><th>생년월일</th><th>국적</th><th>연락처</th><th>X 계정</th><th>연락 이메일</th><th>등록 시각 (KST)</th></tr></thead><tbody id="attendeeRows"></tbody></table></div>
+<p id="attendeeEmpty" class="empty" hidden>이 회차에 조건에 맞는 등록 정보가 없습니다.</p>
+<p class="muted small">표는 좌우로 스크롤할 수 있습니다. CSV에는 현재 검색·구분 조건에 맞는 정보가 포함됩니다. 예비 당첨자는 개별 최종 당첨 안내를 받은 뒤 방청이 확정됩니다.</p>
 </section>
 <section id="historyPane" role="tabpanel" aria-labelledby="historyTab" class="card" hidden><h2>이 회차의 변경 이력</h2><p class="muted small">최근 운영 기록 중 선택한 회차의 변경사항만 표시합니다.</p><div id="auditList"></div><p id="auditEmpty" class="empty" hidden>표시할 변경 이력이 없습니다.</p></section>
 </section>

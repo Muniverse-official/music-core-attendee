@@ -25,7 +25,8 @@ function program(){
 }
 function syncSheetLink(p=program()){
   if(!sheetLink)return;
-  sheetLink.href=sheetLinks[p]||sheetLinks.music_core;
+  sheetLink.hidden=p==='music_core';if(sheetLink.hidden)return;
+  sheetLink.href=sheetLinks[p];
   sheetLink.textContent=p==='fans_pick'?'FANS PICK 개인정보 시트 열기 ↗':'음중 개인정보 시트 열기 ↗';
   sheetLink.setAttribute('aria-label',(p==='fans_pick'?'FANS PICK':'쇼! 음악중심')+' 당첨자 개인정보 Google 스프레드시트 열기');
 }
