@@ -622,10 +622,9 @@ html[lang="en"] .hero-copy, html[lang="ja"] .hero-copy, html[lang^="zh"] .hero-c
 }
 
 /* Reserve selection is a result, not the attendee registration step. */
-html:not([data-availability="open"]) #reserve,body.reserve-state .stepper{display:none!important}
+html:not([data-availability="open"]) #reserve{display:none!important}
 .reserve-panel{padding:32px;line-height:1.75;word-break:keep-all;overflow-wrap:anywhere}
 .reserve-panel h2{font-size:26px;margin:18px 0 12px;color:#302244}
 .reserve-panel p{margin:12px 0;font-size:17px}
 .reserve-panel .hint{font-size:14px;color:#76667f}
-.reserve-panel .pixel-button{margin-top:24px}
 @media(max-width:520px){.reserve-panel{padding:26px 20px}.reserve-panel h2{font-size:23px}.reserve-panel p{font-size:16px}}

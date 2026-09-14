@@ -12,18 +12,22 @@ begin
  assert (out->>'added')::int=1,'reserve added';
  select id into wid from public.music_core_winners where round_id=rid and identity_hash=repeat('a',64);
  out=public.attendee_check_winner('music_core',repeat('a',64),repeat('b',64),repeat('c',64),'qa-reserve','qa-reserve');
- assert out->>'selection_type'='reserve' and not(out?'winner_id'),'reserve lookup without eligible winner id';
+ assert out->>'selection_type'='reserve' and out->>'winner_id'=wid::text,'reserve lookup with registration identity';
  out=public.attendee_check_winner('music_core',repeat('d',64),repeat('b',64),repeat('f',64),'qa-mismatch','qa-mismatch');
  assert out->>'code'='WINNER_PARTIAL_MISMATCH','reserve partial identity mismatch';
  out=public.attendee_round_data('music_core');
  assert exists(select 1 from jsonb_array_elements(out->'winners') w where w->>'id'=wid::text and w->>'selection_type'='reserve'),'admin reserve list';
  out=public.attendee_commit_registration('music_core',wid,repeat('a',64),'reserve-qa@example.invalid','Reserve QA','QA','KR',date '2000-01-01','010-1234-5678','@qa_test','reserve-qa@example.invalid','qa-ip');
- assert out->>'code'='RESERVE_NOT_ELIGIBLE','reserve registration rejected';
- begin
-  insert into public.music_core_attendees(winner_id,account_email,muniverse_nickname,name,nationality,birth_date,phone,x_account,contact_email,event_date,consent_version,consented_at)
-  values(wid,'reserve-qa@example.invalid','QA','QA','KR',date '2000-01-01','010-1234-5678','@qa_test','reserve-qa@example.invalid',(config->>'event_date')::date,'qa',now());
-  raise exception 'TEST_FAILED legacy direct registration';
- exception when others then if sqlerrm <> 'RESERVE_NOT_ELIGIBLE' then raise;end if;end;
+ assert out->>'ok'='true' and out->>'selection_type'='reserve' and out->>'delivery_queued'='false','reserve registration without primary delivery';
+ assert (select submitted and selection_type='reserve' from public.music_core_winners where id=wid),'registration preserves reserve classification';
+ assert (select count(*)=1 from public.music_core_attendees where winner_id=wid and name='QA' and birth_date=date '2000-01-01' and nationality='KR' and phone='010-1234-5678' and x_account='@qa_test' and contact_email='reserve-qa@example.invalid'),'same personal fields stored';
+ assert not exists(select 1 from public.attendee_delivery_outbox where winner_id=wid),'reserve omitted from primary delivery';
+ out=public.attendee_round_data('music_core');
+ assert exists(select 1 from jsonb_array_elements(out->'winners') w where w->>'id'=wid::text and w->>'selection_type'='reserve' and w->>'submitted'='true' and w->>'phone'='010-1234-5678' and w->>'birth_date'='2000-01-01' and w->>'nationality'='KR'),'admin can retrieve registered reserve info';
+ out=public.attendee_check_winner('music_core',repeat('a',64),repeat('b',64),repeat('c',64),'qa-registered','qa-registered');
+ assert out->>'code'='ALREADY_SUBMITTED' and out->>'selection_type'='reserve','reserve duplicate lookup';
+ out=public.attendee_commit_registration('music_core',wid,repeat('a',64),'reserve-qa@example.invalid','Reserve QA','QA','KR',date '2000-01-01','010-1234-5678','@qa_test','reserve-qa@example.invalid','qa-ip');
+ assert out->>'code'='ALREADY_SUBMITTED' and out->>'selection_type'='reserve','reserve duplicate submission';
  begin
   perform public.attendee_round_mutate('music_core','add_winners',jsonb_build_object('round_id',rid,'winners',jsonb_build_array(entry)),'qa-local');
   raise exception 'TEST_FAILED expected cross-list conflict';
@@ -38,15 +42,17 @@ begin
  assert (select selection_type='reserve' from public.music_core_winners where id=wid),'editing preserves reserve';
  select count(*) into before_count from public.attendee_delivery_outbox;
  perform public.attendee_round_mutate('music_core','promote_reserve',jsonb_build_object('round_id',rid,'id',wid,'confirm',true),'qa-local');
- assert (select count(*) from public.attendee_delivery_outbox)=before_count,'promotion does not contact recipients';
+ assert (select count(*) from public.attendee_delivery_outbox)=before_count+1,'promotion queues the existing registration';
  out=public.attendee_check_winner('music_core',repeat('a',64),repeat('b',64),repeat('c',64),'qa-promoted','qa-promoted');
- assert out->>'ok'='true' and out->>'winner_id'=wid::text and coalesce(out->>'selection_type','primary')='primary','promoted primary lookup';
+ assert out->>'code'='ALREADY_SUBMITTED' and out->>'selection_type'='primary','promoted winner does not register again';
  begin
   perform public.attendee_round_mutate('music_core','promote_reserve',jsonb_build_object('round_id',rid,'id',wid,'confirm',true),'qa-local');
   raise exception 'TEST_FAILED repeated promotion';
  exception when others then if sqlerrm <> 'NOT_RESERVE_WINNER' then raise;end if;end;
  out=public.attendee_commit_registration('music_core',wid,repeat('a',64),'reserve-qa@example.invalid','Reserve QA','QA','KR',date '2000-01-01','010-1234-5678','@qa_test','reserve-qa@example.invalid','qa-ip');
- assert out->>'ok'='true' and out->>'registered'='true','promoted winner can register';
+ assert out->>'code'='ALREADY_SUBMITTED','promoted registration remains complete';
+ assert (select count(*)=1 from public.music_core_attendees where winner_id=wid),'single registration retained';
+ assert (select count(*)=1 from public.attendee_delivery_outbox where winner_id=wid and payload->>'phone'='010-1234-5678' and payload->>'birth_date'='2000-01-01' and payload->>'nationality'='KR'),'promotion uses saved information exactly once';
  out=public.attendee_check_winner('music_core',repeat('a',64),repeat('b',64),repeat('c',64),'qa-registered','qa-registered');
  assert out->>'code'='ALREADY_SUBMITTED','duplicate registration guard retained';
  entry=entry||jsonb_build_object('identity_hash',repeat('d',64),'email_hash',repeat('e',64),'nickname_hash',repeat('f',64));
