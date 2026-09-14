@@ -39,6 +39,7 @@ jobs:
           FANS_PICK_SOURCE: ${{ github.workspace }}/qa-peer-fans/app.js
         run: |
           node tools/qa-edge.mjs
+          node tools/qa-reserve-edge.mjs
           node tools/qa-remediation.mjs
           node tools/qa-worker.mjs
       - name: Configure Pages

@@ -1,0 +1,41 @@
+import {chromium} from 'playwright';
+import {readFile,mkdir} from 'node:fs/promises';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+const base=path.resolve(import.meta.dirname,'..'),host='https://muniverse-official.github.io',origin='https://kkaoerbblpuszptiibvo.supabase.co';
+await mkdir(path.join(base,'qa-screenshots'),{recursive:true});
+const browser=await chromium.launch({headless:true});
+const context=await browser.newContext();
+const errors=[];context.on('page',page=>page.on('pageerror',e=>errors.push(e.message)));
+await context.route(host+'/music-core-attendee/**',async route=>{const u=new URL(route.request().url());let relative=decodeURIComponent(u.pathname.replace('/music-core-attendee/',''));if(!relative||relative.endsWith('/'))relative+='index.html';const file=path.resolve(base,'site',relative);if(!file.startsWith(path.join(base,'site')+path.sep))return route.abort();try{const body=await readFile(file);const ext=path.extname(file);return route.fulfill({body,contentType:({'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp'})[ext]||'text/plain'});}catch{return route.fulfill({status:404})}});
+let selection='reserve';
+const config={ok:true,program:'music_core',publishedAt:new Date().toISOString(),openAt:new Date(Date.now()-3600000).toISOString(),closeAt:new Date(Date.now()+3600000).toISOString(),paused:false,testMode:false,eventDateTba:false,eventDate:'2026-09-19',showEventDate:false};
+await context.route(origin+'/**',async route=>{let result;
+const u=new URL(route.request().url());
+if(u.pathname.includes('/storage/'))result=config;
+else if(u.searchParams.get('action')==='clock')result={ok:true,serverTime:new Date().toISOString()};
+else result=selection==='reserve'?{ok:true,selectionType:'reserve'}:selection==='primary'?{ok:true,token:'mock-only',eventDate:'2026-09-19'}:{ok:false,code:'WINNER_NOT_LISTED'};
+return route.fulfill({status:result.ok?200:404,contentType:'application/json',headers:{'access-control-allow-origin':host},body:JSON.stringify(result)});
+});
+try{
+const page=await context.newPage();await page.setViewportSize({width:390,height:844});await page.goto(host+'/music-core-attendee/');await page.waitForFunction(()=>document.documentElement.dataset.availability==='open');
+await page.selectOption('#lang','ko');await page.fill('#email','reserve@example.invalid');await page.fill('#nickname','예비 테스트');await page.locator('label[for="consent"]').click();await page.click('#verifyBtn');await page.locator('#reserve').waitFor({state:'visible'});
+assert.equal(await page.locator('#reserveTitle').textContent(),'예비 당첨자입니다.');assert.match(await page.locator('#reserveBody').textContent(),/개별 연락/);assert.equal(await page.locator('#step2').isVisible(),false);assert.equal(await page.locator('.stepper').isVisible(),false);
+for(const lang of ['en','ja','zh-TW','zh-CN','ko']){await page.selectOption('#lang',lang);assert.ok((await page.locator('#reserveBody').textContent()).length>15);assert.equal(await page.locator('#reserve').isVisible(),true)}
+assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+await page.screenshot({path:path.join(base,'qa-screenshots/reserve-mobile.png'),fullPage:true});
+await page.click('#reserveBack');assert.equal(await page.locator('#email').inputValue(),'');selection='primary';await page.fill('#email','primary@example.invalid');await page.fill('#nickname','본 테스트');await page.locator('label[for="consent"]').click();await page.click('#verifyBtn');await page.locator('#step2').waitFor({state:'visible'});assert.equal(await page.locator('#reserve').isVisible(),false);
+const rid='11111111-1111-4111-8111-111111111111';const cfg={event_date:'2026-09-19',event_date_tba:'false',registration_open_at:config.openAt,registration_close_at:config.closeAt,show_event_date:'false',test_mode:'false',registration_paused:'false'};
+const round={id:rid,title:'964회차',program:'music_core',is_public:true,archived:false,version:1,config:cfg};
+const payload={ok:true,username:'qa',expiresAt:new Date(Date.now()+7200000).toISOString(),serverTime:new Date().toISOString(),history:[],music_core:{active_round_id:rid,rounds:[round],winners:[{id:'22222222-2222-4222-8222-222222222222',round_id:rid,email:'main@example.invalid',nickname:'본 당첨 QA',selection_type:'primary',submitted:false},{id:'33333333-3333-4333-8333-333333333333',round_id:rid,email:'reserve@example.invalid',nickname:'예비 QA',selection_type:'reserve',submitted:false}]},fans_pick:{rounds:[{...round,program:'fans_pick',title:'1회차'}],winners:[],active_round_id:rid}};
+const writes=[];
+await context.route(origin+'/functions/v1/attendee-admin',async route=>{const b=route.request().postDataJSON();let result={ok:true};if(b.action==='login')result={ok:true,token:'a'.repeat(64)};else if(b.action==='get')result=payload;else{writes.push(b);if(b.action==='promote_reserve')payload.music_core.winners.find(w=>w.id===b.id).selection_type='primary';if(b.action==='add_winners'){result={ok:true,added:b.winners.length,duplicates:0};payload.music_core.winners.push(...b.winners.map((w,i)=>({...w,id:'added-'+i,round_id:rid,selection_type:b.selection_type,submitted:false})))}}return route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':host},body:JSON.stringify(result)})});
+const admin=await context.newPage();await admin.setViewportSize({width:1400,height:1000});await admin.goto(host+'/music-core-attendee/admin/');await admin.fill('#username','qa');await admin.fill('#password','test-only');await admin.click('#loginButton');await admin.locator('#dashboard').waitFor({state:'visible'});await admin.waitForFunction(()=>document.body.getAttribute('aria-busy')==='false');await admin.click('#winnersTab');
+assert.equal(await admin.locator('#winnerRows tr').count(),1);assert.match(await admin.locator('#winnerRows').textContent(),/본 당첨 QA/);assert.equal(await admin.locator('#reserveCount').textContent(),'1');
+await admin.click('[data-selection="reserve"]');assert.equal(await admin.locator('#winnerRows tr').count(),1);assert.match(await admin.locator('#winnerRows').textContent(),/예비 QA/);assert.equal(await admin.locator('#statusFilter').isVisible(),false);
+await admin.fill('#winnerInput','reserve2@example.invalid, 추가 예비 QA');await admin.click('#addButton');await admin.waitForFunction(()=>document.body.getAttribute('aria-busy')==='false');assert.equal(writes.at(-1).selection_type,'reserve');assert.equal(await admin.locator('#winnerRows tr').count(),2);
+await admin.screenshot({path:path.join(base,'qa-screenshots/reserve-admin.png'),fullPage:true});
+await admin.locator('#winnerRows tr').first().getByRole('button',{name:'본 당첨자로 전환'}).click();await admin.click('#confirmAccept');await admin.waitForFunction(()=>document.body.getAttribute('aria-busy')==='false');assert.equal(writes.at(-1).action,'promote_reserve');assert.equal(await admin.locator('#winnerRows tr').count(),1);await admin.click('[data-selection="primary"]');assert.equal(await admin.locator('#winnerRows tr').count(),2);
+await admin.click('[data-program="fans_pick"]');assert.equal(await admin.locator('#selectionTabs').isVisible(),false);assert.equal(await admin.locator('#reserveStat').isVisible(),false);assert.deepEqual(errors,[]);
+console.log('PASS reserve mobile + five languages, primary registration screen, separate lists, reserve import, manual promotion, FANS PICK compatibility');
+}catch(error){for(const [index,page] of context.pages().entries())await page.screenshot({path:path.join(base,'qa-screenshots/reserve-failure-'+index+'.png'),fullPage:true}).catch(()=>{});console.error('PAGE ERRORS',errors);throw error}finally{await browser.close()}
