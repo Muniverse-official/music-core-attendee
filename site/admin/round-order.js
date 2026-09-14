@@ -3,10 +3,6 @@
 const list=document.getElementById('roundList');
 if(!list)return;
 
-const sheetLinks=Object.freeze({
-  music_core:'https://docs.google.com/spreadsheets/d/191598ZPdnCdDlvoa8aFGGNPmT1_xqEZXOq7vvEEahp0/edit',
-  fans_pick:'https://docs.google.com/spreadsheets/d/1GsFyGTLeJV62T9xsfFyvsxOljRy3Egr7MkahpttlrPs/edit'
-});
 const publicLink=document.getElementById('publicLink');
 let sheetLink=document.getElementById('sheetLink');
 if(!sheetLink&&publicLink){
@@ -23,13 +19,7 @@ let scheduled=false;
 function program(){
   return document.querySelector('[data-program][aria-pressed="true"]')?.dataset.program||'music_core';
 }
-function syncSheetLink(p=program()){
-  if(!sheetLink)return;
-  sheetLink.hidden=p==='music_core';if(sheetLink.hidden)return;
-  sheetLink.href=sheetLinks[p];
-  sheetLink.textContent=p==='fans_pick'?'FANS PICK 개인정보 시트 열기 ↗':'음중 개인정보 시트 열기 ↗';
-  sheetLink.setAttribute('aria-label',(p==='fans_pick'?'FANS PICK':'쇼! 음악중심')+' 당첨자 개인정보 Google 스프레드시트 열기');
-}
+function syncSheetLink(){if(sheetLink)sheetLink.hidden=true}
 function numberOf(button){
   const text=button.querySelector('strong')?.textContent||'';
   const m=text.match(/^\s*([0-9]+)\s*회(?:차)?(?:\s|$)/);
@@ -90,5 +80,5 @@ document.querySelectorAll('[data-program]').forEach(button=>button.addEventListe
 syncSheetLink();
 schedule();
 document.documentElement.dataset.roundOrder='latest-first-safe';
-document.documentElement.dataset.sheetLinks='program-specific';
+document.documentElement.dataset.sheetLinks='disabled';
 })();
