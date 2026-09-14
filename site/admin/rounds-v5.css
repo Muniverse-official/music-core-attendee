@@ -4,3 +4,5 @@
 
 .selection-tabs{margin-bottom:12px}.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.stats>[hidden],.selection-tabs[hidden],#selectionNotice[hidden],#statusFilter[hidden]{display:none!important}
 @media(max-width:700px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.selection-tabs{display:flex;flex-wrap:wrap}}
+
+.attendee-table{min-width:1550px}.attendee-table th{white-space:nowrap}.attendee-table td{max-width:250px;overflow-wrap:anywhere}.attendee-table-wrap{max-height:65vh;overscroll-behavior-x:contain}.attendee-table thead th{position:sticky;top:0}.attendee-table-wrap:focus-visible{outline:3px solid #bcb2ff;outline-offset:2px}

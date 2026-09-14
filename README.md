@@ -3,7 +3,7 @@
 Independent Muniverse winner verification and attendee registration service for SHOW! MUSIC CORE.
 
 - Public site: `site/`
-- Supabase Edge Function: `supabase/functions/music-core-attendee/`
+- Supabase Edge Functions: `supabase/functions/attendee-public/` and `supabase/functions/attendee-admin/`
 - Google Apps Script dispatcher: `apps-script/`
 - Winner import: `tools/import_winners.py`
 - Post-event deletion: `tools/purge_attendee_data.py` and the Apps Script purge functions
@@ -11,10 +11,12 @@ Independent Muniverse winner verification and attendee registration service for 
 
 GitHub Pages publishes only `site/`. Winner emails and nicknames are converted to SHA-256 lookup hashes before import. A submitted winner cannot reopen or change the registration and sees only a completed-registration notice.
 
-## Music Core reserve winners
+## Music Core registrations and reserve winners
 
-The administrator's per-round winner area has separate Primary and Reserve lists. Entries default to primary; adding the same identity to a different list is rejected. Reserve entries can be imported, edited, deleted, and exported independently. The administrator can explicitly promote a reserve entry to primary after confirming a vacancy. Promotion is logged and does not send a message.
+The administrator's per-round winner area separates Primary and Reserve lists. Both groups verify their email and nickname, then use the same registration form for name, birth date, nationality, phone, X account, and contact email. Reserve registration stays classified as reserve, and attendance is confirmed only after an individual final-selection notice. Notices are translated into Korean, English, Japanese, Traditional Chinese, and Simplified Chinese.
 
-During the existing announcement window, an exact email/nickname match on the reserve list displays a localized reserve notice and the promise of individual contact if a primary winner fails to register. It issues no registration token. The registration RPC and an attendee-table trigger both reject reserve entries. A promoted entry uses the existing round's registration window; operators must set the appropriate window before inviting that person to register. Existing winner records, completed registrations, and FANS PICK behavior retain their prior meanings.
+The **방청자 정보** tab displays registered attendees for the selected round, including the original registration identity, age, and KST registration time. Administrators can search, filter Primary/Reserve, and download the displayed records as UTF-8 CSV. Promotion retains the existing record and updates its classification without requiring another submission.
+
+Music Core registrations are stored in the database and no longer enqueue Google Sheets or the associated operator email. Existing spreadsheet data is not deleted. Legacy Music Core delivery jobs cannot be dispatched or retried. FANS PICK retains its existing delivery workflow.
 
 Checks: `node tools/qa-reserve-edge.mjs`, `node tools/reserve-ui-smoke.mjs` (Playwright), and `tools/qa-reserve-database.sql` (transaction with rollback).

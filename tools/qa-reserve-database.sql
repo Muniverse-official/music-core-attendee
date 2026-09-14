@@ -1,7 +1,7 @@
 -- Run on the migrated schema. Fixtures and registration/outbox rows are rolled back.
 begin;
 do $test$
-declare rid uuid;other_rid uuid;wid uuid;main_id uuid;fan_id uuid;out jsonb;config jsonb;before_count bigint;entry jsonb;
+declare rid uuid;other_rid uuid;wid uuid;main_id uuid;fan_id uuid;out jsonb;config jsonb;before_count bigint;entry jsonb;legacy_job bigint;fan_winner uuid;
 begin
  config=jsonb_build_object('event_date',((now() at time zone 'Asia/Seoul')::date+7)::text,'event_date_tba','false','registration_open_at',(now()-interval '1 hour')::text,'registration_close_at',(now()+interval '1 hour')::text,'show_event_date','false','test_mode','false','registration_paused','false');
  update public.attendee_rounds set is_public=false where is_public;
@@ -42,7 +42,7 @@ begin
  assert (select selection_type='reserve' from public.music_core_winners where id=wid),'editing preserves reserve';
  select count(*) into before_count from public.attendee_delivery_outbox;
  perform public.attendee_round_mutate('music_core','promote_reserve',jsonb_build_object('round_id',rid,'id',wid,'confirm',true),'qa-local');
- assert (select count(*) from public.attendee_delivery_outbox)=before_count+1,'promotion queues the existing registration';
+ assert (select count(*) from public.attendee_delivery_outbox)=before_count,'promotion does not enqueue sheet or mail delivery';
  out=public.attendee_check_winner('music_core',repeat('a',64),repeat('b',64),repeat('c',64),'qa-promoted','qa-promoted');
  assert out->>'code'='ALREADY_SUBMITTED' and out->>'selection_type'='primary','promoted winner does not register again';
  begin
@@ -52,19 +52,40 @@ begin
  out=public.attendee_commit_registration('music_core',wid,repeat('a',64),'reserve-qa@example.invalid','Reserve QA','QA','KR',date '2000-01-01','010-1234-5678','@qa_test','reserve-qa@example.invalid','qa-ip');
  assert out->>'code'='ALREADY_SUBMITTED','promoted registration remains complete';
  assert (select count(*)=1 from public.music_core_attendees where winner_id=wid),'single registration retained';
- assert (select count(*)=1 from public.attendee_delivery_outbox where winner_id=wid and payload->>'phone'='010-1234-5678' and payload->>'birth_date'='2000-01-01' and payload->>'nationality'='KR'),'promotion uses saved information exactly once';
+ assert not exists(select 1 from public.attendee_delivery_outbox where winner_id=wid),'promotion retains server records without exporting';
  out=public.attendee_check_winner('music_core',repeat('a',64),repeat('b',64),repeat('c',64),'qa-registered','qa-registered');
  assert out->>'code'='ALREADY_SUBMITTED','duplicate registration guard retained';
  entry=entry||jsonb_build_object('identity_hash',repeat('d',64),'email_hash',repeat('e',64),'nickname_hash',repeat('f',64));
  perform public.attendee_round_mutate('music_core','add_winners',jsonb_build_object('round_id',rid,'winners',jsonb_build_array(entry)),'qa-local');
  assert (select selection_type='primary' from public.music_core_winners where round_id=rid and identity_hash=repeat('d',64)),'default remains primary';
+ select id into main_id from public.music_core_winners where round_id=rid and identity_hash=repeat('d',64);
+ out=public.attendee_commit_registration('music_core',main_id,repeat('d',64),'primary-qa@example.invalid','Primary QA','Primary QA','KR',date '2000-01-01','010-1234-5678','@qa_test','primary-qa@example.invalid','qa-ip');
+ assert out->>'ok'='true' and out->>'delivery_queued'='false','primary registration saved without sheet delivery';
+ assert not exists(select 1 from public.attendee_delivery_outbox where winner_id=main_id),'no primary delivery queued';
+ out=public.attendee_round_data('music_core');
+ assert exists(select 1 from jsonb_array_elements(out->'winners') w where w->>'id'=main_id::text and w->>'registration_email'='primary-qa@example.invalid' and w->>'registration_nickname'='Primary QA' and w->>'registered_at' is not null),'registered record has original identity and time';
+ insert into public.attendee_delivery_outbox(program,winner_id,round_id,payload) values('music_core',main_id,rid,'{}') returning id into legacy_job;
+ assert not exists(select 1 from public.attendee_delivery_claim(200) where id=legacy_job),'legacy music jobs are excluded from dispatch';
+ update public.attendee_delivery_outbox set status='processing',locked_at=now() where id=legacy_job;
+ assert public.attendee_delivery_is_current(legacy_job)=false,'in-flight music recheck rejects external delivery';
+ update public.attendee_delivery_outbox set status='failed',locked_at=null where id=legacy_job;
+ begin
+  perform public.attendee_delivery_retry('music_core',rid,legacy_job,'qa-local');
+  raise exception 'TEST_FAILED music delivery retry accepted';
+ exception when others then if sqlerrm <> 'DELIVERY_DISABLED' then raise;end if;end;
  update public.attendee_rounds set config=jsonb_set(attendee_rounds.config,'{registration_close_at}',to_jsonb((now()-interval '1 minute')::text)) where id=rid;
  out=public.attendee_check_winner('music_core',repeat('d',64),repeat('e',64),repeat('f',64),'qa-close','qa-close');
  assert out->>'code'='CLOSED','existing closing deadline enforced';
  insert into public.attendee_rounds(program,title,config,is_public) values('fans_pick','RESERVE QA fans '||gen_random_uuid(),config,true) returning id into fan_id;
+ perform public.attendee_round_sync_runtime(fan_id);
  perform public.attendee_round_mutate('fans_pick','add_winners',jsonb_build_object('round_id',fan_id,'winners',jsonb_build_array(entry)),'qa-local');
  out=public.attendee_check_winner('fans_pick',repeat('d',64),repeat('e',64),repeat('f',64),'qa-fans','qa-fans');
  assert out->>'ok'='true' and out?'winner_id','fans pick remains eligible';
+ fan_winner=(out->>'winner_id')::uuid;
+ out=public.attendee_commit_registration('fans_pick',fan_winner,repeat('d',64),'fans-qa@example.invalid','Fans QA','Fans QA','KR',date '2000-01-01','010-1234-5678','@qa_test','fans-qa@example.invalid','qa-ip');
+ assert out->>'ok'='true' and out->>'delivery_queued'='true','fans pick delivery preserved';
+ assert exists(select 1 from public.attendee_delivery_claim(200) where winner_id=fan_winner),'fans pick delivery still claimed';
+ assert public.attendee_delivery_is_current((select id from public.attendee_delivery_outbox where winner_id=fan_winner)),'fans pick delivery still authorized';
  out=public.attendee_round_data('fans_pick');
  assert not exists(select 1 from jsonb_array_elements(out->'winners') w where w->>'selection_type'<>'primary'),'fans pick default list';
 end $test$;
