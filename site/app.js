@@ -100,15 +100,51 @@
     "already": "您的候补中奖者信息已完成登记。"
   }
 };
+  const reserveFinalNotices = {
+    ko: [
+      '예비 당첨자의 최종 당첨 여부는 별도로 공지하지 않으며, 최종 당첨자에게만 개별 연락드립니다.',
+      '개별 연락을 받지 못하신 경우 최종 당첨자가 아니므로 방청하실 수 없습니다.'
+    ],
+    en: [
+      'There will be no separate announcement of final selections from the reserve list. Only those selected as final winners will be contacted individually.',
+      'If you do not receive individual confirmation, you have not been selected as a final winner and cannot attend.'
+    ],
+    ja: [
+      '補欠当選者の最終当選結果は別途公表せず、最終当選者にのみ個別にご連絡します。',
+      '個別の連絡を受け取っていない場合は最終当選者ではないため、観覧できません。'
+    ],
+    'zh-TW': [
+      '候補者的最終中獎結果不會另行公告，我們僅會個別聯絡最終中獎者。',
+      '若未收到個別通知，即表示您未獲最終中獎資格，無法入場觀賞。'
+    ],
+    'zh-CN': [
+      '候补者的最终中奖结果不会另行公告，我们仅会单独联系最终中奖者。',
+      '若未收到单独通知，即表示您未获得最终中奖资格，无法入场观看。'
+    ]
+  };
+  function appendReserveFinalNotice(id) {
+    const element = $(id);
+    if (!element) return;
+    const [announcement, result] = reserveFinalNotices[lang()];
+    element.appendChild(document.createElement('br'));
+    element.appendChild(document.createElement('br'));
+    element.appendChild(document.createTextNode(announcement + ' '));
+    const emphasis = document.createElement('strong');
+    emphasis.textContent = result;
+    element.appendChild(emphasis);
+  }
   const isReserve = () => state.selectionType === 'reserve';
   const reserveCopy = () => reserveTranslations[lang()];
   function reserveLanguage() {
     const c = reserveCopy();
     for (const [id,key] of [['reserveTitle','title'],['reserveBody','body'],['reserveInstruction','instruction'],['reserveNote','note']]) setText(id,c[key]);
+    appendReserveFinalNotice('reserveNote');
     if (!isReserve()) return;
     setText('infoDesc',c.info); setText('contactHint',c.contact);
     for (const id of ['doneTitle','doneDesc','doneMain','doneSub']) setText(id,c[id]);
     setText('alreadyMessage',c.already); setText('alreadyReserveNote',c.doneSub);
+    appendReserveFinalNotice('doneSub');
+    appendReserveFinalNotice('alreadyReserveNote');
   }
   function setSelection(value) {
     state.selectionType = value === 'reserve' ? 'reserve' : 'primary';
