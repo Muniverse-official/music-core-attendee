@@ -12,17 +12,27 @@ let gateKey = 'loading';
 let resultKey = '';
 let preview = false;
 let winnerNumber = '';
+let winner;
+let identity;
+let consentMessage = '';
+const consentForm = byId('consent-form');
 try { token = sessionStorage.getItem('muniverse-attendee-console-v3') || ''; } catch {}
 
 function render() {
   document.documentElement.lang = lang.value;
-  const copy = translations[lang.value];
+  const copy = {...translations[lang.value], ...consentCopy[lang.value]};
   document.querySelectorAll('[data-copy]').forEach(el => { el.textContent = copy[el.dataset.copy]; });
   gate.textContent = copy[gateKey] || '';
   result.textContent = copy[resultKey] || '';
   result.toggleAttribute('data-error', ['failed','rate','invalid'].includes(resultKey));
   byId('number').textContent = winnerNumber;
   byId('number-card').hidden = !winnerNumber;
+  byId('japan-safeguards').hidden = lang.value !== 'ja';
+  byId('winner-section').hidden = !winner;
+  consentForm.hidden = !winner || winner.agreed || winner.expired;
+  byId('winner-status').textContent = copy[consentMessage || (winner?.agreed ? 'accepted' : winner?.expired ? 'expired' : '')] || '';
+  byId('deadline').textContent = winner?.deadline && !winner.agreed ? `${copy.deadlineText} · ${new Intl.DateTimeFormat(lang.value,{timeZone:'Asia/Seoul',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(winner.deadline))} (KST)` : '';
+  byId('attendance-list').replaceChildren(...copy.attendance.map(text => {const li=document.createElement('li');li.textContent=text;return li;}));
 }
 
 async function request(body, withToken = false) {
@@ -65,11 +75,17 @@ form.addEventListener('submit', async event => {
   button.disabled = true;
   resultKey = '';
   winnerNumber = '';
+  winner = undefined;
+  identity = undefined;
+  consentMessage = '';
+  consentForm.reset();
   render();
   try {
-    const data = await request({action:'lookup', email:byId('email').value, nickname:byId('nickname').value});
+    const account = {email:byId('email').value, nickname:byId('nickname').value};
+    const data = await request({action:'lookup', ...account});
     resultKey = data.selection;
     winnerNumber = data.selection === 'primary' ? data.number : '';
+    if (data.selection === 'primary') { winner = data; identity = account; }
     form.reset();
   } catch (error) {
     if (error.message === 'ANNOUNCEMENT_CLOSED') {
@@ -84,6 +100,24 @@ form.addEventListener('submit', async event => {
     button.disabled = false;
     render();
   }
+});
+
+consentForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const agree = byId('agree');
+  if (!winner || !identity || winner.agreed || winner.expired || agree.disabled || !byId('collect-consent').checked) return;
+  agree.disabled = true;
+  button.disabled = true;
+  consentMessage = '';
+  try {
+    await request({action:'consent', ...identity, name:byId('legal-name').value, phone:byId('phone').value, language:lang.value, collectionAgreed:true, agreed:true, version:'2026-11-13-v1'});
+    winner.agreed = true;
+    consentForm.reset();
+    identity = undefined;
+  } catch (error) {
+    if (error.message === 'CONSENT_DEADLINE') winner.expired = true;
+    else consentMessage = {RATE_LIMITED:'rate',INVALID_FIELDS:'formInvalid'}[error.message] || 'failed';
+  } finally { agree.disabled = false; button.disabled = false; render(); }
 });
 
 lang.addEventListener('change', render);

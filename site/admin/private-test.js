@@ -19,9 +19,11 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   <p id="enhypenTestMessage" role="status" class="message"></p>
   <nav class="tabs" aria-label="엔하이픈 당첨 구분"><button type="button" data-enhypen-kind="primary" aria-pressed="true">본 당첨 <span id="enhypenPrimaryCount">0</span>/50</button><button type="button" data-enhypen-kind="reserve" aria-pressed="false">예비 당첨 <span id="enhypenReserveCount">0</span>/30</button><button type="button" data-enhypen-kind="withdrawn" aria-pressed="false">방청 취소</button></nav>
   <form id="enhypenImport"><label>당첨자 명단 붙여넣기<textarea id="enhypenRows" rows="5" required></textarea></label><p id="enhypenFormat" class="muted small"></p><button type="submit">명단 추가</button></form>
-  <div class="table-wrap" tabindex="0" aria-label="엔하이픈 당첨자 명단"><table><thead><tr><th>이메일</th><th>닉네임</th><th>개인 당첨 번호</th><th>관리</th></tr></thead><tbody id="enhypenTable"></tbody></table></div>
+  <div class="section-head"><h2 id="enhypenListTitle">본 당첨자 명단</h2><div class="actions"><button id="enhypenCsv" class="secondary" type="button">이 목록 CSV</button><button id="enhypenWeverseCsv" class="secondary" type="button">위버스 제공용 CSV</button></div></div>
+  <div class="filters"><input id="enhypenSearch" type="search" aria-label="이메일·닉네임·번호 검색" placeholder="이메일·닉네임·번호 검색"><select id="enhypenFilter" aria-label="정보 등록 상태"><option value="all">전체 상태</option><option value="agreed">등록 완료</option><option value="pending">미등록</option></select><span id="enhypenVisible" class="muted" aria-live="polite"></span></div>
+  <div class="table-wrap" tabindex="0" aria-label="엔하이픈 당첨자 명단"><table><thead><tr><th>이메일</th><th>닉네임</th><th>개인 당첨 번호</th><th>정보 등록 상태</th><th>이름</th><th>연락처</th><th>관리</th></tr></thead><tbody id="enhypenTable"></tbody></table></div>
   <p id="enhypenEmpty" class="empty">등록된 명단이 없습니다.</p>
-  <dialog id="enhypenNumber" aria-labelledby="enhypenNumberTitle"><form id="enhypenNumberForm"><h2 id="enhypenNumberTitle"></h2><p id="enhypenNumberName"></p><label>개인 당첨 번호<input id="enhypenNumberValue" type="text" inputmode="numeric" pattern="[0-9]{1,16}" maxlength="16" required></label><p class="muted small">다른 당첨자와 중복되지 않는 숫자를 입력하세요.</p><p id="enhypenNumberMessage" role="status" class="message"></p><div class="actions"><button id="enhypenNumberCancel" class="secondary" type="button">취소</button><button type="submit">저장</button></div></form></dialog>`;
+  <dialog id="enhypenNumber" aria-labelledby="enhypenNumberTitle"><form id="enhypenNumberForm"><h2 id="enhypenNumberTitle"></h2><p id="enhypenNumberName"></p><label>개인 당첨 번호<input id="enhypenNumberValue" type="text" inputmode="numeric" pattern="[0-9]{1,16}" maxlength="16" required></label><label id="enhypenDeadlineWrap" hidden>정보 입력 기한 (한국시간)<input id="enhypenDeadline" type="datetime-local"></label><p class="muted small">다른 당첨자와 중복되지 않는 숫자를 입력하세요.</p><p id="enhypenNumberMessage" role="status" class="message"></p><div class="actions"><button id="enhypenNumberCancel" class="secondary" type="button">취소</button><button type="submit">저장</button></div></form></dialog>`;
   dashboard.insertBefore(panel, settings);
   const message = document.getElementById('enhypenTestMessage');
   const pause = document.getElementById('enhypenTestPause');
@@ -39,7 +41,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   let operation = 0;
   let loading = false;
   let expiryTimer;
-  const errors = {CAPACITY:'본 당첨 50명 또는 예비 당첨 30명 한도에 도달했습니다. 예비 당첨자를 전환하려면 먼저 본 당첨 자리를 확보해 주세요.', DUPLICATE_NUMBER:'이미 부여된 당첨 번호입니다.', DUPLICATE_WINNER:'이미 등록된 이메일·닉네임 조합이 있습니다.', INVALID_FIELDS:'이메일과 닉네임 형식을 확인해 주세요.', INVALID_NUMBER:'당첨 번호는 숫자 1~16자리로 입력하세요.', INVALID_TRANSITION:'현재 상태에서는 변경할 수 없습니다. 명단을 새로고침해 주세요.', NO_PRIMARY:'본 당첨자를 추가한 뒤 공개할 수 있습니다.', WINNER_MISSING:'명단에 없는 당첨자입니다.'};
+  const errors = {CAPACITY:'본 당첨 50명 또는 예비 당첨 30명 한도에 도달했습니다. 예비 당첨자를 전환하려면 먼저 본 당첨 자리를 확보해 주세요.', DUPLICATE_NUMBER:'이미 부여된 당첨 번호입니다.', DUPLICATE_WINNER:'이미 등록된 이메일·닉네임 조합이 있습니다.', INVALID_FIELDS:'이메일과 닉네임 형식을 확인해 주세요.', INVALID_NUMBER:'당첨 번호는 숫자 1~16자리로 입력하세요.', INVALID_DEADLINE:'정보 입력 기한을 현재 시각 이후, 11월 25일 이내로 지정해 주세요.', INVALID_TRANSITION:'현재 상태에서는 변경할 수 없습니다. 명단을 새로고침해 주세요.', NO_PRIMARY:'본 당첨자를 추가한 뒤 공개할 수 있습니다.', WINNER_MISSING:'명단에 없는 당첨자입니다.'};
 
   function setLoading(value) {
     loading = value;
@@ -74,8 +76,20 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     renderList();
   }
 
+  function visibleRows() {
+    const query = get('enhypenSearch').value.trim().toLowerCase();
+    const status = get('enhypenFilter').value;
+    return state.winners.filter(row => row.selection === kind && [row.email,row.nickname,row.winner_number].some(value => value?.toLowerCase().includes(query)) && (kind !== 'primary' || status === 'all' || (status === 'agreed') === Boolean(row.consent)));
+  }
+
   function renderList() {
-    const rows = state.winners.filter(row => row.selection === kind);
+    const rows = visibleRows();
+    get('enhypenListTitle').textContent = {primary:'본 당첨자 명단',reserve:'예비 당첨자 명단',withdrawn:'방청 취소 명단'}[kind];
+    get('enhypenFilter').hidden = kind !== 'primary';
+    get('enhypenVisible').textContent = `${rows.length}명`;
+    get('enhypenCsv').disabled = !rows.length;
+    get('enhypenWeverseCsv').hidden = kind !== 'primary';
+    get('enhypenWeverseCsv').disabled = !state.winners.some(row => row.selection === 'primary' && row.consent);
     kindButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.enhypenKind === kind)));
     get('enhypenImport').hidden = kind === 'withdrawn';
     get('enhypenFormat').textContent = kind === 'primary' ? '한 줄에 이메일, 닉네임, 번호를 입력하세요. 엑셀에서 세 열을 복사해 붙여넣을 수도 있습니다.' : '한 줄에 이메일, 닉네임을 입력하세요. 개인 번호는 본 당첨 전환 시 지정합니다.';
@@ -83,7 +97,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     get('enhypenEmpty').hidden = Boolean(rows.length);
     get('enhypenTable').replaceChildren(...rows.map(row => {
       const tr = document.createElement('tr');
-      for (const value of [row.email, row.nickname, row.winner_number || '—']) {
+      for (const value of [row.email, row.nickname, row.winner_number || '—', row.consent ? '등록 완료' : '미등록', row.consent?.legal_name || '—', row.consent?.phone || '—']) {
         const td = document.createElement('td');
         td.textContent = value;
         tr.append(td);
@@ -113,6 +127,10 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     get('enhypenNumberTitle').textContent = action === 'promote' ? '본 당첨 전환 및 번호 지정' : '개인 당첨 번호 수정';
     get('enhypenNumberName').textContent = row.nickname;
     numberInput.value = row.winner_number || '';
+    const deadline = get('enhypenDeadline');
+    get('enhypenDeadlineWrap').hidden = action !== 'promote';
+    deadline.required = action === 'promote';
+    deadline.value = new Date(Date.parse(row.consent_deadline || '2026-11-20T15:00:00+09:00') + 9*3600000).toISOString().slice(0,16);
     get('enhypenNumberMessage').textContent = '';
     dialog.showModal();
   }
@@ -157,6 +175,8 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     active = false;
     state = undefined;
     input.value = '';
+    get('enhypenSearch').value = '';
+    get('enhypenFilter').value = 'all';
     get('enhypenTable').replaceChildren();
     if (dialog.open) dialog.close();
     editing = undefined;
@@ -200,8 +220,21 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   dialog.addEventListener('cancel', event => { if (loading) event.preventDefault(); });
   get('enhypenNumberForm').onsubmit = event => {
     event.preventDefault();
-    if (editing) void run({...editing, number:numberInput.value}, () => dialog.close());
+    if (!editing) return;
+    const deadline = editing.action === 'promote' ? `${get('enhypenDeadline').value}:00+09:00` : undefined;
+    void run({...editing, number:numberInput.value, deadline}, () => dialog.close());
   };
+  for (const id of ['enhypenSearch','enhypenFilter']) get(id).oninput = () => { if (state) renderList(); };
+  function download(rows, filename) {
+    const cell = value => {
+      const safe = String(value ?? '');
+      return '"' + (/^[\s]*[=+@-]/.test(safe) ? "'" + safe : safe).replaceAll('"','""') + '"';
+    };
+    const url = URL.createObjectURL(new Blob(['\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n')], {type:'text/csv;charset=utf-8'}));
+    const anchor = document.createElement('a'); anchor.href=url; anchor.download=filename; anchor.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
+  }
+  get('enhypenCsv').onclick = () => download([['이메일','닉네임','개인 당첨 번호','정보 등록 상태','이름','연락처'],...visibleRows().map(row => [row.email,row.nickname,row.winner_number,row.consent?'등록 완료':'미등록',row.consent?.legal_name,row.consent?.phone])],`enhypen-${kind}.csv`);
+  get('enhypenWeverseCsv').onclick = () => download([['이름','연락처','개인 당첨 번호'],...state.winners.filter(row => row.selection === 'primary' && row.consent).map(row => [row.consent.legal_name,row.consent.phone,row.winner_number])],'enhypen-weverse.csv');
 
   return {
     leave,
