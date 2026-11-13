@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:; connect-src https://kkaoerbblpuszptiibvo.supabase.co; form-action 'none'; base-uri 'none'; object-src 'none'">
+  <title>ENHYPEN’S SPECIAL SHOW | 방청 당첨 확인</title>
+  <link rel="stylesheet" href="style.css?v=9">
+  <script src="copy.js?v=9" defer></script>
+  <script src="consent.js?v=9" defer></script>
+  <script src="consent-terms.js?v=9" defer></script>
+  <script src="registration-countries.js?v=9" defer></script>
+  <script src="winner-shared.js?v=9" defer></script>
+  <script src="registration.js?v=9" defer></script>
+</head>
+<body>
+  <main>
+    <div class="art" id="art" hidden>
+      <img class="art-backdrop" id="backdrop" width="1000" height="1000" alt="" aria-hidden="true">
+      <img class="art-poster" id="banner" width="1000" height="1000" alt="MBC ENHYPEN’S SPECIAL SHOW">
+    </div>
+    <section class="panel">
+      <div class="content">
+      <header><select id="lang" aria-label="Language / 언어"><option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option><option value="zh-TW">繁體中文</option><option value="zh-CN">简体中文</option></select></header>
+      <h1 id="title" data-copy="registrationTitle"></h1>
+      <p id="gate" role="status"></p>
+
+      <div id="outcome" tabindex="-1" aria-live="polite"><p id="result"></p><div id="number-card" hidden><span data-copy="number"></span><strong id="number"></strong></div></div>
+      <section id="winner-section" aria-labelledby="winner-heading" hidden>
+        <h2 id="winner-heading" data-copy="winnerHeading"></h2><p id="winner-status" role="status" tabindex="-1"></p><p id="deadline"></p>
+        <form id="consent-form" autocomplete="off">
+          <fieldset class="privacy consent-card"><legend data-copy="privacy"></legend><dl id="collection-terms"></dl><label class="check"><input id="collect-consent" type="checkbox" required><span data-copy="collectAgree"></span></label></fieldset>
+          <fieldset class="privacy consent-card"><legend data-copy="thirdTitle"></legend><dl id="disclosure-terms"></dl><p id="japan-safeguards" hidden><a href="https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_korea/">韓国の個人情報保護制度</a> · <a href="https://privacy.weverse.io/union/easy_policies/easy_privacy_policy_en.html">提供先のプライバシーポリシー</a></p><p id="us-notice" data-copy="usNotice" hidden></p><label class="check"><input id="disclose-consent" type="checkbox" required><span data-copy="discloseAgree"></span></label></fieldset>
+          <div class="privacy contact-note"><p data-copy="rights"></p><a href="mailto:support@muniverse.io">support@muniverse.io</a></div>
+          <p id="preview-note" class="field-hint" data-copy="previewReadOnly" hidden></p>
+          <fieldset id="registration-fields" disabled hidden><legend data-copy="winnerHeading"></legend>
+          <div class="registration-fields">
+            <label><span data-copy="legalName"></span><input id="legal-name" maxlength="100" autocomplete="name" required></label>
+            <label><span data-copy="birthDate"></span><input id="birth-date" type="date" max="2026-11-25" autocomplete="bday" required></label>
+          </div>
+          <fieldset><legend data-copy="nationality"></legend><div class="choices">
+            <label><input type="radio" name="nationality-mode" value="KR" checked><span data-copy="korean"></span></label>
+            <label><input type="radio" name="nationality-mode" value="OTHER"><span data-copy="foreign"></span></label>
+          </div><label id="country-wrap" hidden><span data-copy="country"></span><select id="country" autocomplete="country" disabled></select></label></fieldset>
+          <fieldset><legend data-copy="phone"></legend><div class="choices">
+            <label><input type="radio" name="phone-mode" value="KR" checked><span data-copy="koreanPhone"></span></label>
+            <label><input type="radio" name="phone-mode" value="INTL"><span data-copy="internationalPhone"></span></label>
+          </div><label id="korean-phone-wrap"><span data-copy="phone"></span><input id="korean-phone" type="tel" maxlength="20" autocomplete="tel-national" placeholder="010-1234-5678" required></label>
+          <label id="intl-phone-wrap" hidden><span data-copy="phone"></span><input id="intl-phone" type="tel" maxlength="40" autocomplete="tel" placeholder="+1 212 555 1234" disabled></label><p id="phone-hint" class="field-hint"></p></fieldset>
+          <label><span data-copy="contactEmail"></span><input id="contact-email" type="email" maxlength="254" autocomplete="email" required></label>
+          <label><span data-copy="xAccount"></span><input id="x-account" maxlength="100" autocapitalize="none" spellcheck="false" placeholder="@username" aria-describedby="x-hint" required></label><p class="field-hint" id="x-hint" data-copy="xHint"></p>
+          <button id="agree" type="submit" data-copy="agree"></button>
+          </fieldset>
+        </form>
+        <div class="privacy" id="attendance-info"><h3 data-copy="attendanceTitle"></h3><div id="attendance-list"></div></div>
+      </section>
+      <a id="lookup-again" class="lookup-again" href="./" data-copy="lookupAgain"></a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
