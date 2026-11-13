@@ -2,6 +2,7 @@ const byId = id => document.getElementById(id);
 const form = byId('lookup');
 const lang = byId('lang');
 const banner = byId('banner');
+const art = byId('art');
 const gate = byId('gate');
 const result = byId('result');
 const button = byId('submit');
@@ -51,7 +52,8 @@ async function openPage() {
     button.disabled = preview;
     if (/^data:image\/webp;base64,[\w+/=]+$/.test(data.banner || '')) {
       banner.src = data.banner;
-      banner.hidden = false;
+      byId('backdrop').src = data.banner;
+      art.hidden = false;
     }
   } catch { gateKey = 'failed'; }
   render();
@@ -73,7 +75,7 @@ form.addEventListener('submit', async event => {
     if (error.message === 'ANNOUNCEMENT_CLOSED') {
       gateKey = 'closed';
       form.hidden = true;
-      banner.hidden = true;
+      art.hidden = true;
       form.reset();
     } else {
       resultKey = {RATE_LIMITED:'rate', INVALID_FIELDS:'invalid'}[error.message] || 'failed';
