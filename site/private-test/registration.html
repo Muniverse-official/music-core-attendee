@@ -7,13 +7,13 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:; connect-src https://kkaoerbblpuszptiibvo.supabase.co; form-action 'none'; base-uri 'none'; object-src 'none'">
   <title>ENHYPEN’S SPECIAL SHOW | 방청 당첨 확인</title>
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=12">
   <script src="copy.js?v=9" defer></script>
   <script src="consent.js?v=9" defer></script>
-  <script src="consent-terms.js?v=11" defer></script>
+  <script src="consent-terms.js?v=12" defer></script>
   <script src="registration-countries.js?v=9" defer></script>
   <script src="winner-shared.js?v=9" defer></script>
-  <script src="registration.js?v=9" defer></script>
+  <script src="registration.js?v=12" defer></script>
 </head>
 <body>
   <main>
@@ -27,9 +27,11 @@
       <h1 id="title" data-copy="registrationTitle"></h1>
       <p id="gate" role="status"></p>
 
-      <div id="outcome" tabindex="-1" aria-live="polite"><p id="result"></p><div id="number-card" hidden><span data-copy="number"></span><strong id="number"></strong></div></div>
+      <div id="outcome" tabindex="-1" aria-live="polite"><div id="number-card" hidden><span data-copy="number"></span><strong id="number"></strong></div></div>
       <section id="winner-section" aria-labelledby="winner-heading" hidden>
-        <h2 id="winner-heading" data-copy="winnerHeading"></h2><p id="winner-status" role="status" tabindex="-1"></p><p id="deadline"></p>
+        <h2 id="winner-heading" data-copy="winnerHeading"></h2>
+        <p class="consent-requirement" data-copy="consentRequirement"></p>
+        <p id="winner-status" role="status" tabindex="-1"></p><p id="deadline"></p>
         <form id="consent-form" autocomplete="off">
           <fieldset class="privacy consent-card"><legend data-copy="privacy"></legend><dl id="collection-terms"></dl><label class="check"><input id="collect-consent" type="checkbox" required><span data-copy="collectAgree"></span></label></fieldset>
           <fieldset class="privacy consent-card"><legend data-copy="thirdTitle"></legend><dl id="disclosure-terms"></dl><p id="japan-safeguards" hidden><a href="https://www.ppc.go.jp/enforcement/infoprovision/laws/offshore_report_korea/">韓国の個人情報保護制度</a> · <a href="https://privacy.weverse.io/union/easy_policies/easy_privacy_policy_en.html">提供先のプライバシーポリシー</a></p><p id="us-notice" data-copy="usNotice" hidden></p><label class="check"><input id="disclose-consent" type="checkbox" required><span data-copy="discloseAgree"></span></label></fieldset>

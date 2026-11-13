@@ -52,7 +52,6 @@ function render() {
   document.documentElement.lang = lang.value;
   document.querySelectorAll('[data-copy]').forEach(el => {el.textContent=copy[el.dataset.copy] || '';});
   byId('gate').textContent = copy[gateKey] || '';
-  byId('result').textContent = winner ? copy.primary : '';
   byId('number').textContent = winner?.number || '';
   byId('number-card').hidden = !winner;
   byId('winner-section').hidden = !winner;

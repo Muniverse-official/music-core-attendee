@@ -1,5 +1,6 @@
 const consentTerms = {
   ko:{
+    consentRequirement:'개인정보 제공에 동의하지 않을 경우 방청할 수 없습니다.',
     agree:'당첨자 정보 제출', discloseAgree:'위버스컴퍼니에 개인정보를 제공하는 데 동의합니다.',
     collectionTerms:[
       ['수집·이용 주체','MBC 및 주식회사 티앤케이팩토리'],
@@ -41,22 +42,26 @@ const consentTerms = {
     ]]],
   },
   en:{
+    consentRequirement:'You cannot attend if you do not consent to the disclosure of your personal information.',
     agree:'Submit winner information', discloseAgree:'I consent to disclosure to WEVERSE COMPANY Inc.',
     collectionTerms:[['Collected by','MBC and TNK FACTORY'],['Purposes','Ticket issuance, winner communications, and on-site identity verification'],['Categories collected','Name, date of birth, phone number, attendance email, X account, nationality, Korean phone number availability, Muniverse account email and nickname, and personal winner number'],['Retention','Through the end of the November 25, 2026 event. These records are deleted afterward unless retention is required by law.'],['Your choice','You can decline consent. If you decline, your attendance cannot be confirmed.']],
     disclosureTerms:[['Recipient','WEVERSE COMPANY Inc.'],['Recipient’s purposes','Ticket issuance and on-site identity verification'],['Data disclosed','Name, phone number, and personal winner number'],['Recipient retention','Through the end of the November 25, 2026 event'],['Your choice','You can decline consent. If you decline, your attendance cannot be confirmed.']],
     usNotice:'This event page does not sell this information or share it for cross-context behavioral advertising.',
   },
   ja:{
+    consentRequirement:'個人情報の第三者提供に同意しない場合は、観覧できません。',
     agree:'当選者情報を送信', discloseAgree:'WEVERSE COMPANY Inc.への第三者提供に同意します。',
     collectionTerms:[['取扱事業者','MBCおよびTNK FACTORY'],['利用目的','観覧券の発行、当選者への連絡および会場での本人確認'],['取得項目','氏名、生年月日、電話番号、観覧案内用メールアドレス、Xアカウント、国籍、韓国の電話番号の有無、Muniverse登録メールアドレス・ニックネーム、個別当選番号'],['保有期間','2026年11月25日の観覧終了まで。法令上の保存義務がある場合を除き、終了後に削除します。'],['同意を拒否した場合','同意は任意です。同意しない場合、当選確定および観覧ができません。']],
     disclosureTerms:[['提供先','WEVERSE COMPANY Inc.（韓国）'],['提供先の利用目的','観覧券の発行および会場での本人確認'],['提供項目','氏名、電話番号、個別当選番号'],['保有・利用期間','2026年11月25日の観覧終了まで'],['同意を拒否した場合','同意は任意です。同意しない場合、当選確定および観覧ができません。']],
   },
   'zh-TW':{
+    consentRequirement:'若不同意提供個人資料，將無法入場觀賞。',
     agree:'提交中選者資料', discloseAgree:'我同意向 WEVERSE COMPANY Inc. 提供資料。',
     collectionTerms:[['蒐集者','MBC 與 TNK FACTORY'],['使用目的','發放觀賞券、聯絡中選者及現場核對身分'],['蒐集項目','姓名、出生日期、電話、通知電郵、X 帳號、國籍、是否有韓國電話號碼、Muniverse 註冊電郵及暱稱、個人中選編號'],['保留及使用期限','至 2026 年 11 月 25 日活動結束。除法律要求保留外，活動結束後刪除。'],['拒絕同意及影響','你可拒絕同意。拒絕時將無法確認中選及入場。']],
     disclosureTerms:[['接收方','韓國 WEVERSE COMPANY Inc.'],['接收方用途','發放觀賞券及現場核對身分'],['提供項目','姓名、電話及個人中選編號'],['保留及使用期限','至 2026 年 11 月 25 日活動結束'],['拒絕同意及影響','你可拒絕同意。拒絕時將無法確認中選及入場。']],
   },
   'zh-CN':{
+    consentRequirement:'如不同意提供个人信息，将无法入场观看。',
     agree:'提交入选者信息', discloseAgree:'我同意向 WEVERSE COMPANY Inc. 提供信息。',
     collectionTerms:[['收集方','MBC 与 TNK FACTORY'],['使用目的','发放入场券、联系入选者及现场身份核验'],['收集项目','姓名、出生日期、电话、通知邮箱、X 账号、国籍、是否有韩国电话号码、Muniverse 注册邮箱及昵称、个人入选编号'],['保存及使用期限','至 2026 年 11 月 25 日活动结束。除法律要求保存外，活动结束后删除。'],['拒绝同意及影响','你可以拒绝同意。拒绝后将无法确认资格及入场。']],
     disclosureTerms:[['接收方','韩国 WEVERSE COMPANY Inc.'],['接收方用途','发放入场券及现场身份核验'],['提供项目','姓名、电话及个人入选编号'],['保存及使用期限','至 2026 年 11 月 25 日活动结束'],['拒绝同意及影响','你可以拒绝同意。拒绝后将无法确认资格及入场。']],

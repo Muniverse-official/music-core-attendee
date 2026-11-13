@@ -54,3 +54,4 @@ main,main:has(.art[hidden]){display:block;width:min(100%,46rem);min-height:0;mar
   .art-wordmark {left:5.6%;top:18%;width:44%;height:72%;}
   .art-wordmark img {width:88cqw;height:88cqw;left:-5.2cqw;top:-8.8cqw;}
 }
+.consent-requirement{margin:.4rem 0 .65rem;font-size:.94rem;font-weight:700;color:var(--gold)}
