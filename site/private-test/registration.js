@@ -36,8 +36,9 @@ function renderTerms(id, terms) {
 }
 
 function renderAttendance(copy) {
-  const groups = copy.attendanceGroups || [['',copy.attendance]];
-  byId('attendance-list').replaceChildren(...groups.map(([label,items]) => {
+  const scheduleTimes = ['16:30–18:00','18:00–18:50','18:50–19:20','19:30–21:30'];
+  renderTerms('guide-schedule', scheduleTimes.map((time, i) => [time,copy.guideSchedule[i]]));
+  byId('attendance-list').replaceChildren(...copy.guideSections.map(([label,items]) => {
     const group=document.createElement('div');
     if (label) {const heading=document.createElement('h4'); heading.textContent=label; group.append(heading);}
     const list=document.createElement('ul');
@@ -48,7 +49,7 @@ function renderAttendance(copy) {
 }
 
 function render() {
-  const copy = {...translations[lang.value],...consentCopy[lang.value],...consentTerms[lang.value]};
+  const copy = {...translations[lang.value],...consentCopy[lang.value],...consentTerms[lang.value],...winnerGuide[lang.value]};
   document.documentElement.lang = lang.value;
   document.querySelectorAll('[data-copy]').forEach(el => {el.textContent=copy[el.dataset.copy] || '';});
   byId('gate').textContent = copy[gateKey] || '';

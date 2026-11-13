@@ -7,13 +7,14 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:; connect-src https://kkaoerbblpuszptiibvo.supabase.co; form-action 'none'; base-uri 'none'; object-src 'none'">
   <title>ENHYPEN’S SPECIAL SHOW | 방청 당첨 확인</title>
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
   <script src="copy.js?v=9" defer></script>
   <script src="consent.js?v=9" defer></script>
   <script src="consent-terms.js?v=12" defer></script>
+  <script src="winner-guide.js?v=13" defer></script>
   <script src="registration-countries.js?v=9" defer></script>
   <script src="winner-shared.js?v=9" defer></script>
-  <script src="registration.js?v=12" defer></script>
+  <script src="registration.js?v=13" defer></script>
 </head>
 <body>
   <main>
@@ -56,7 +57,13 @@
           <button id="agree" type="submit" data-copy="agree"></button>
           </fieldset>
         </form>
-        <div class="privacy" id="attendance-info"><h3 data-copy="attendanceTitle"></h3><div id="attendance-list"></div></div>
+        <section id="attendance-info" class="winner-guide" aria-labelledby="guide-title">
+          <h3 id="guide-title" data-copy="guideTitle"></h3>
+          <p class="guide-date" data-copy="guideDate"></p>
+          <p class="guide-venue" data-copy="guideVenue"></p>
+          <dl id="guide-schedule" class="guide-schedule"></dl>
+          <div id="attendance-list"></div>
+        </section>
       </section>
       <a id="lookup-again" class="lookup-again" href="./" data-copy="lookupAgain"></a>
       </div>
