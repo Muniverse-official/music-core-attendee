@@ -25,6 +25,7 @@ function setupLanguage(render) {
 }
 
 async function request(body, withToken = false) {
+  if (body.action === 'preview') body = {...body, artwork:'wide'};
   const headers = {'content-type':'application/json','x-admin-request':'1'};
   if (withToken && token) headers.authorization = `Bearer ${token}`;
   const response = await fetch(api,{method:'POST',cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',headers,body:JSON.stringify(body),signal:AbortSignal.timeout(12000)});
@@ -36,6 +37,5 @@ async function request(body, withToken = false) {
 function showPoster(data) {
   if (!/^data:image\/webp;base64,[\w+/=]+$/.test(data.banner || '')) return;
   byId('banner').src = data.banner;
-  byId('backdrop').src = data.banner;
   byId('art').hidden = false;
 }
