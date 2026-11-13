@@ -19,7 +19,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   <div class="stats"><div><span>테스트곡 A</span><strong id="enhypen-votes_a">0</strong></div><div><span>테스트곡 B</span><strong id="enhypen-votes_b">0</strong></div><div><span>테스트곡 C</span><strong id="enhypen-votes_c">0</strong></div><div><span>당첨 확인</span><strong id="enhypen-verifications">0</strong></div><div><span>방청 등록</span><strong id="enhypen-registrations">0</strong></div></div>
   <div class="actions"><button id="enhypenTestOpen" type="button">비공개 테스트 페이지 열기</button><button id="enhypenTestPause" class="secondary" type="button">테스트 일시정지</button></div>
   <p id="enhypenTestMessage" role="status" class="message"></p>
-  <iframe id="enhypenTestFrame" title="비공개 테스트 페이지" sandbox="allow-scripts" referrerpolicy="no-referrer" width="100%" height="950" hidden></iframe>`;
+  <iframe id="enhypenTestFrame" title="비공개 테스트 페이지" sandbox="allow-scripts allow-forms" referrerpolicy="no-referrer" width="100%" height="950" hidden></iframe>`;
   dashboard.insertBefore(panel, settings);
   const frame = document.getElementById('enhypenTestFrame');
   const message = document.getElementById('enhypenTestMessage');
