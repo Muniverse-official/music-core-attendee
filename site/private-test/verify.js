@@ -32,6 +32,8 @@ function render() {
   byId('winner-section').hidden = !winner;
   consentForm.hidden = !winner || winner.agreed || winner.expired;
   byId('winner-status').textContent = copy[consentMessage || (winner?.agreed ? 'accepted' : winner?.expired ? 'expired' : '')] || '';
+  byId('agree').disabled = preview;
+  byId('preview-note').hidden = !preview;
   byId('deadline').textContent = winner?.deadline && !winner.agreed ? `${copy.deadlineText} · ${new Intl.DateTimeFormat(lang.value,{timeZone:'Asia/Seoul',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(winner.deadline))} (KST)` : '';
   byId('attendance-list').replaceChildren(...copy.attendance.map(text => {const li=document.createElement('li');li.textContent=text;return li;}));
   if (country.dataset.language !== lang.value) {
@@ -85,7 +87,6 @@ async function openPage() {
     preview = data.preview === true;
     gateKey = data.open ? '' : preview ? 'preview' : 'closed';
     form.hidden = !data.open && !preview;
-    button.disabled = preview;
     if (/^data:image\/webp;base64,[\w+/=]+$/.test(data.banner || '')) {
       banner.src = data.banner;
       byId('backdrop').src = data.banner;
@@ -97,7 +98,7 @@ async function openPage() {
 
 form.addEventListener('submit', async event => {
   event.preventDefault();
-  if (button.disabled || preview) return;
+  if (button.disabled) return;
   button.disabled = true;
   resultKey = '';
   winnerNumber = '';
@@ -108,7 +109,9 @@ form.addEventListener('submit', async event => {
   render();
   try {
     const account = {email:byId('email').value, nickname:byId('nickname').value};
-    const data = await request({action:'lookup', ...account});
+    const data = await request({action:'lookup', ...account}, preview);
+    preview = data.preview === true;
+    gateKey = preview ? 'preview' : '';
     resultKey = data.selection;
     winnerNumber = data.selection === 'primary' ? data.number : '';
     if (data.selection === 'primary') { winner = data; identity = account; byId('contact-email').value = account.email.trim(); }
@@ -116,6 +119,11 @@ form.addEventListener('submit', async event => {
   } catch (error) {
     if (error.message === 'ANNOUNCEMENT_CLOSED') {
       gateKey = 'closed';
+      form.hidden = true;
+      art.hidden = true;
+      form.reset();
+    } else if (['UNAUTHORIZED','SESSION_EXPIRED'].includes(error.message) && preview) {
+      gateKey = 'previewExpired';
       form.hidden = true;
       art.hidden = true;
       form.reset();
@@ -131,7 +139,7 @@ form.addEventListener('submit', async event => {
 consentForm.addEventListener('submit', async event => {
   event.preventDefault();
   const agree = byId('agree');
-  if (!winner || !identity || winner.agreed || winner.expired || agree.disabled || !byId('collect-consent').checked) return;
+  if (preview || !winner || !identity || winner.agreed || winner.expired || agree.disabled || !byId('collect-consent').checked) return;
   agree.disabled = true;
   button.disabled = true;
   consentMessage = '';
