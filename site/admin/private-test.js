@@ -21,7 +21,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   <form id="enhypenImport"><label>당첨자 명단 붙여넣기<textarea id="enhypenRows" rows="5" required></textarea></label><p id="enhypenFormat" class="muted small"></p><button type="submit">명단 추가</button></form>
   <div class="table-wrap" tabindex="0" aria-label="엔하이픈 당첨자 명단"><table><thead><tr><th>이메일</th><th>닉네임</th><th>개인 당첨 번호</th><th>관리</th></tr></thead><tbody id="enhypenTable"></tbody></table></div>
   <p id="enhypenEmpty" class="empty">등록된 명단이 없습니다.</p>
-  <dialog id="enhypenNumber"><form id="enhypenNumberForm"><h2 id="enhypenNumberTitle"></h2><p id="enhypenNumberName"></p><label>개인 당첨 번호<input id="enhypenNumberValue" type="text" inputmode="numeric" pattern="[0-9]{1,16}" maxlength="16" required></label><p class="muted small">다른 당첨자와 중복되지 않는 숫자를 입력하세요.</p><div class="actions"><button id="enhypenNumberCancel" class="secondary" type="button">취소</button><button type="submit">저장</button></div></form></dialog>`;
+  <dialog id="enhypenNumber" aria-labelledby="enhypenNumberTitle"><form id="enhypenNumberForm"><h2 id="enhypenNumberTitle"></h2><p id="enhypenNumberName"></p><label>개인 당첨 번호<input id="enhypenNumberValue" type="text" inputmode="numeric" pattern="[0-9]{1,16}" maxlength="16" required></label><p class="muted small">다른 당첨자와 중복되지 않는 숫자를 입력하세요.</p><p id="enhypenNumberMessage" role="status" class="message"></p><div class="actions"><button id="enhypenNumberCancel" class="secondary" type="button">취소</button><button type="submit">저장</button></div></form></dialog>`;
   dashboard.insertBefore(panel, settings);
   const message = document.getElementById('enhypenTestMessage');
   const pause = document.getElementById('enhypenTestPause');
@@ -47,6 +47,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     refresh.disabled = loading;
     open.disabled = loading || !state;
     get('enhypenImport').querySelector('button').disabled = loading || !state;
+    get('enhypenNumberForm').querySelectorAll('button').forEach(button => { button.disabled = loading; });
     panel.querySelectorAll('#enhypenTable button').forEach(button => { button.disabled = loading; });
   }
 
@@ -112,6 +113,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     get('enhypenNumberTitle').textContent = action === 'promote' ? '본 당첨 전환 및 번호 지정' : '개인 당첨 번호 수정';
     get('enhypenNumberName').textContent = row.nickname;
     numberInput.value = row.winner_number || '';
+    get('enhypenNumberMessage').textContent = '';
     dialog.showModal();
   }
 
@@ -132,17 +134,18 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     const id = ++operation;
     const token = getToken();
     setLoading(true);
-    message.textContent = '처리 중…';
+    const feedback = dialog.open ? get('enhypenNumberMessage') : message;
+    feedback.textContent = '처리 중…';
     try {
       if (body.action !== 'state') await request(body);
       const data = await request({action:'state'});
       if (!active || id !== operation || token !== getToken()) return;
       render(data);
       success?.();
-      message.textContent = '';
+      feedback.textContent = '';
     } catch (error) {
       if (id === operation && active) {
-        message.textContent = error.message;
+        feedback.textContent = error.message;
       }
     } finally {
       if (id === operation) setLoading(false);
@@ -194,6 +197,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     } catch (error) { message.textContent = error.message; }
   };
   get('enhypenNumberCancel').onclick = () => dialog.close();
+  dialog.addEventListener('cancel', event => { if (loading) event.preventDefault(); });
   get('enhypenNumberForm').onsubmit = event => {
     event.preventDefault();
     if (editing) void run({...editing, number:numberInput.value}, () => dialog.close());
