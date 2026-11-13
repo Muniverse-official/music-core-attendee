@@ -41,7 +41,7 @@ form.onsubmit = async event => {
   try {
     const email = byId('email').value.trim();
     const data = await request({action:'lookup',email,nickname:byId('nickname').value},preview);
-    if (data.selection === 'primary') {
+    if (data.selection === 'primary' || (data.selection === 'reserve' && data.ticket)) {
       if (!data.ticket || !save(ticketKey,data.ticket)) throw new Error('FAILED');
       save(languageKey,lang.value);
       form.reset();

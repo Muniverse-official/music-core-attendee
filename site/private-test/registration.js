@@ -53,11 +53,15 @@ function render() {
   document.documentElement.lang = lang.value;
   document.querySelectorAll('[data-copy]').forEach(el => {el.textContent=copy[el.dataset.copy] || '';});
   byId('gate').textContent = copy[gateKey] || '';
+  const reserve = winner?.selection === 'reserve';
+  byId('reserve-notice').hidden = !reserve || winner.agreed;
+  byId('reserve-notice').textContent = copy.reserveRegistration;
   byId('number').textContent = winner?.number || '';
-  byId('number-card').hidden = !winner;
+  byId('number-card').hidden = !winner?.number;
   byId('winner-section').hidden = !winner;
+  byId('attendance-info').hidden = reserve;
   form.hidden = !winner || winner.agreed || winner.expired;
-  byId('winner-status').textContent = copy[message || (winner?.agreed ? 'accepted' : winner?.expired ? 'expired' : '')] || '';
+  byId('winner-status').textContent = copy[message || (winner?.agreed ? (reserve ? 'reserveAccepted' : 'accepted') : winner?.expired ? 'expired' : '')] || '';
   byId('deadline').textContent = winner?.deadline && !winner.agreed ? `${copy.deadlineText} · ${new Intl.DateTimeFormat(lang.value,{timeZone:'Asia/Seoul',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(winner.deadline))} (KST)` : '';
   byId('japan-safeguards').hidden = lang.value !== 'ja';
   byId('us-notice').hidden = lang.value !== 'en';

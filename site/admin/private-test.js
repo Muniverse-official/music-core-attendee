@@ -79,7 +79,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   function visibleRows() {
     const query = get('enhypenSearch').value.trim().toLowerCase();
     const status = get('enhypenFilter').value;
-    return state.winners.filter(row => row.selection === kind && [row.email,row.nickname,row.winner_number].some(value => value?.toLowerCase().includes(query)) && (kind !== 'primary' || status === 'all' || (status === 'agreed') === Boolean(row.consent)));
+    return state.winners.filter(row => row.selection === kind && [row.email,row.nickname,row.winner_number].some(value => value?.toLowerCase().includes(query)) && (kind === 'withdrawn' || status === 'all' || (status === 'agreed') === Boolean(row.consent)));
   }
 
   function registrationValues(row) {
@@ -91,7 +91,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   function renderList() {
     const rows = visibleRows();
     get('enhypenListTitle').textContent = {primary:'본 당첨자 명단',reserve:'예비 당첨자 명단',withdrawn:'방청 취소 명단'}[kind];
-    get('enhypenFilter').hidden = kind !== 'primary';
+    get('enhypenFilter').hidden = kind === 'withdrawn';
     get('enhypenVisible').textContent = `${rows.length}명`;
     get('enhypenCsv').disabled = !rows.length;
     get('enhypenWeverseCsv').hidden = kind !== 'primary';
