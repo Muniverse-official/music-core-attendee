@@ -8,3 +8,49 @@
 /* The announcement and registration use the same stacked poster and card layout. */
 main,main:has(.art[hidden]){display:block;width:min(100%,46rem);min-height:0;margin:0 auto;padding:1rem clamp(.75rem,3vw,1.25rem) 2.5rem}.art,.panel{border:1px solid var(--line);border-radius:1rem}.art,main:has(#winner-section:not([hidden])) .art{min-height:0;height:clamp(12.5rem,47vw,16rem);margin-bottom:.8rem}.art-backdrop{display:block}.art-poster{width:auto;height:100%;max-height:100%;max-width:100%;object-fit:contain}.panel{display:block;padding:clamp(1rem,3.3vw,1.55rem);background:#191615}.content{width:auto}header{margin-bottom:.75rem}h1{font-size:clamp(1.55rem,4.6vw,2rem)}a.lookup-again{display:inline-block;margin-top:.85rem}#registration-fields>legend{color:var(--gold);font-size:1rem}#registration-fields{border-top:1px solid var(--line);padding-top:.4rem}#result:focus{outline:none}
 .art-poster{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain}
+/* Use independent crops of the approved artwork to compose a wide banner. */
+.art, main:has(#winner-section:not([hidden])) .art {
+  container-type: inline-size;
+  display:block;
+  height:auto;
+  aspect-ratio: 2.72;
+  background:
+    radial-gradient(ellipse at 77% 0%, #806958 0%, #3b2d24 27%, transparent 65%),
+    radial-gradient(ellipse at 38% 42%, #24201d 0%, #100d0c 70%);
+}
+.art-scene, .art-wordmark { position:absolute; display:block; overflow:hidden; }
+.art-scene {
+  inset:0;
+  mask-image: linear-gradient(to right, transparent 44%, #000 58%);
+}
+.art-scene img {
+  position:absolute;
+  width:64cqw;
+  height:64cqw;
+  right:-1cqw;
+  top:-23cqw;
+  mask-image:linear-gradient(to bottom, transparent 43%, #000 53%);
+}
+.art-wordmark {
+  left:5.5%;
+  top:15%;
+  width:38.7%;
+  height:73%;
+  mix-blend-mode:screen;
+  mask-image:linear-gradient(to right, #000 92%, transparent);
+}
+.art-wordmark img {
+  position:absolute;
+  width:72cqw;
+  height:72cqw;
+  left:-4.25cqw;
+  top:-7.1cqw;
+  filter:brightness(1.04) contrast(1.53);
+}
+@media(max-width:520px) {
+  .art, main:has(#winner-section:not([hidden])) .art { aspect-ratio:2.03; }
+  .art-scene {mask-image:linear-gradient(to right, transparent 43%, #000 61%);}
+  .art-scene img {width:85cqw;height:85cqw;right:-3cqw;top:-30cqw;}
+  .art-wordmark {left:5.6%;top:18%;width:44%;height:72%;}
+  .art-wordmark img {width:88cqw;height:88cqw;left:-5.2cqw;top:-8.8cqw;}
+}
