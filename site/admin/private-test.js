@@ -15,13 +15,11 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   panel.className = 'card';
   panel.hidden = true;
   panel.innerHTML = `<div class="section-head"><div><h2 id="privateTestTitle">비공개 테스트</h2><span id="enhypenTestStatus" class="badge"></span></div><button id="enhypenTestRefresh" class="secondary" type="button">새로고침</button></div>
-  <p class="notice">비공개 테스트 · 관리자만 접근할 수 있습니다. 가상 투표 및 방청 등록 횟수만 집계합니다.</p>
-  <div class="stats"><div><span>테스트곡 A</span><strong id="enhypen-votes_a">0</strong></div><div><span>테스트곡 B</span><strong id="enhypen-votes_b">0</strong></div><div><span>테스트곡 C</span><strong id="enhypen-votes_c">0</strong></div><div><span>당첨 확인</span><strong id="enhypen-verifications">0</strong></div><div><span>방청 등록</span><strong id="enhypen-registrations">0</strong></div></div>
+  <p class="notice">비공개 테스트 · 가상 당첨 확인 횟수만 집계합니다.</p>
+  <div class="stats"><div><span>테스트 당첨 확인</span><strong id="enhypen-verifications">0</strong></div></div>
   <div class="actions"><button id="enhypenTestOpen" type="button">비공개 테스트 페이지 열기</button><button id="enhypenTestPause" class="secondary" type="button">테스트 일시정지</button></div>
-  <p id="enhypenTestMessage" role="status" class="message"></p>
-  <iframe id="enhypenTestFrame" title="비공개 테스트 페이지" sandbox="allow-scripts allow-forms" referrerpolicy="no-referrer" width="100%" height="950" hidden></iframe>`;
+  <p id="enhypenTestMessage" role="status" class="message"></p>`;
   dashboard.insertBefore(panel, settings);
-  const frame = document.getElementById('enhypenTestFrame');
   const message = document.getElementById('enhypenTestMessage');
   const pause = document.getElementById('enhypenTestPause');
   const open = document.getElementById('enhypenTestOpen');
@@ -31,12 +29,6 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   let operation = 0;
   let loading = false;
   let expiryTimer;
-
-  function closeFrame() {
-    frame.hidden = true;
-    frame.removeAttribute('srcdoc');
-    open.textContent = '비공개 테스트 페이지 열기';
-  }
 
   function setLoading(value) {
     loading = value;
@@ -59,21 +51,14 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     return data;
   }
 
-  function notify(data) {
-    if (!frame.hidden && frame.hasAttribute('srcdoc')) frame.contentWindow.postMessage({source:'enhypen-test-admin', ...data}, '*');
-  }
-
   function render(next) {
     state = next;
-    for (const key of ['votes_a','votes_b','votes_c','verifications','registrations']) {
-      document.getElementById(`enhypen-${key}`).textContent = state[key].toLocaleString('ko-KR');
-    }
+    document.getElementById('enhypen-verifications').textContent = state.verifications.toLocaleString('ko-KR');
     pause.textContent = state.paused ? '테스트 재개' : '테스트 일시정지';
     document.getElementById('enhypenTestStatus').textContent = state.paused ? '일시정지' : '진행 중';
-    notify({paused: state.paused});
   }
 
-  async function run(body, receive, onError) {
+  async function run(body) {
     if (loading || !active) return;
     const id = ++operation;
     const token = getToken();
@@ -83,11 +68,9 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
       const data = await request(body);
       if (!active || id !== operation || token !== getToken()) return;
       render(data.state);
-      receive?.(data);
       message.textContent = '';
     } catch (error) {
       if (id === operation && active) {
-        onError?.();
         message.textContent = error.message;
       }
     } finally {
@@ -103,7 +86,6 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     panel.hidden = true;
     existing.hidden = false;
     tab.setAttribute('aria-pressed', 'false');
-    closeFrame();
   }
 
   tab.onclick = async () => {
@@ -117,22 +99,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   };
   pause.onclick = () => run({action:'pause', paused:!state.paused});
   refresh.onclick = () => run({action:'state'});
-  open.onclick = () => {
-    if (!frame.hidden) return closeFrame();
-    return run({action:'preview'}, data => {
-      frame.hidden = false;
-      frame.srcdoc = data.preview;
-      open.textContent = '테스트 페이지 닫기';
-    });
-  };
-  frame.addEventListener('load', () => { if (state) notify({paused:state.paused}); });
-  window.addEventListener('message', event => {
-    if (!active || frame.hidden || event.source !== frame.contentWindow || event.origin !== 'null') return;
-    const {source, action, track, id} = event.data || {};
-    if (source !== 'enhypen-show-test' || !Number.isSafeInteger(id) || !['vote','verify','register'].includes(action)) return;
-    if (loading || !state || state.paused) return notify({id, success:false, paused:state?.paused});
-    void run({action, track}, data => notify({id, success:!data.state.paused, paused:data.state.paused}), () => notify({id, success:false}));
-  });
+  open.onclick = () => { location.assign('../private-test/'); };
 
   return {
     leave,
