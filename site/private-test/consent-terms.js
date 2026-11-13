@@ -1,6 +1,6 @@
 const consentTerms = {
   ko:{
-    consentRequirement:'개인정보 제공에 동의하지 않을 경우 방청할 수 없습니다.',
+    consentRequirement:'방청을 위해 개인정보 제공 동의가 필요합니다.',
     agree:'당첨자 정보 제출', discloseAgree:'위버스컴퍼니에 개인정보를 제공하는 데 동의합니다.',
     collectionTerms:[
       ['수집·이용 주체','MBC 및 주식회사 티앤케이팩토리'],
