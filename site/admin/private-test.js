@@ -21,7 +21,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   <form id="enhypenImport"><label>당첨자 명단 붙여넣기<textarea id="enhypenRows" rows="5" required></textarea></label><p id="enhypenFormat" class="muted small"></p><button type="submit">명단 추가</button></form>
   <div class="section-head"><h2 id="enhypenListTitle">본 당첨자 명단</h2><div class="actions"><button id="enhypenCsv" class="secondary" type="button">이 목록 CSV</button><button id="enhypenWeverseCsv" class="secondary" type="button">위버스 제공용 CSV</button></div></div>
   <div class="filters"><input id="enhypenSearch" type="search" aria-label="이메일·닉네임·번호 검색" placeholder="이메일·닉네임·번호 검색"><select id="enhypenFilter" aria-label="정보 등록 상태"><option value="all">전체 상태</option><option value="agreed">등록 완료</option><option value="pending">미등록</option></select><span id="enhypenVisible" class="muted" aria-live="polite"></span></div>
-  <div class="table-wrap" tabindex="0" aria-label="엔하이픈 당첨자 명단"><table><thead><tr><th>이메일</th><th>닉네임</th><th>개인 당첨 번호</th><th>정보 등록 상태</th><th>이름</th><th>연락처</th><th>관리</th></tr></thead><tbody id="enhypenTable"></tbody></table></div>
+  <div class="table-wrap" tabindex="0" aria-label="엔하이픈 당첨자 명단"><table><thead><tr><th>가입 이메일</th><th>닉네임</th><th>개인 당첨 번호</th><th>정보 등록 상태</th><th>이름</th><th>생년월일</th><th>국적</th><th>연락처</th><th>번호 구분</th><th>안내용 이메일</th><th>X 계정</th><th>관리</th></tr></thead><tbody id="enhypenTable"></tbody></table></div>
   <p id="enhypenEmpty" class="empty">등록된 명단이 없습니다.</p>
   <dialog id="enhypenNumber" aria-labelledby="enhypenNumberTitle"><form id="enhypenNumberForm"><h2 id="enhypenNumberTitle"></h2><p id="enhypenNumberName"></p><label>개인 당첨 번호<input id="enhypenNumberValue" type="text" inputmode="numeric" pattern="[0-9]{1,16}" maxlength="16" required></label><label id="enhypenDeadlineWrap" hidden>정보 입력 기한 (한국시간)<input id="enhypenDeadline" type="datetime-local"></label><p class="muted small">다른 당첨자와 중복되지 않는 숫자를 입력하세요.</p><p id="enhypenNumberMessage" role="status" class="message"></p><div class="actions"><button id="enhypenNumberCancel" class="secondary" type="button">취소</button><button type="submit">저장</button></div></form></dialog>`;
   dashboard.insertBefore(panel, settings);
@@ -82,6 +82,12 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     return state.winners.filter(row => row.selection === kind && [row.email,row.nickname,row.winner_number].some(value => value?.toLowerCase().includes(query)) && (kind !== 'primary' || status === 'all' || (status === 'agreed') === Boolean(row.consent)));
   }
 
+  function registrationValues(row) {
+    const c = row.consent;
+    if (!c) return ['','','','','','',''];
+    return [c.legal_name,c.birth_date,c.nationality,c.phone,c.phone_mode === 'KR' ? '한국 번호' : '해외 번호',c.contact_email,c.x_account];
+  }
+
   function renderList() {
     const rows = visibleRows();
     get('enhypenListTitle').textContent = {primary:'본 당첨자 명단',reserve:'예비 당첨자 명단',withdrawn:'방청 취소 명단'}[kind];
@@ -97,9 +103,9 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     get('enhypenEmpty').hidden = Boolean(rows.length);
     get('enhypenTable').replaceChildren(...rows.map(row => {
       const tr = document.createElement('tr');
-      for (const value of [row.email, row.nickname, row.winner_number || '—', row.consent ? '등록 완료' : '미등록', row.consent?.legal_name || '—', row.consent?.phone || '—']) {
+      for (const value of [row.email, row.nickname, row.winner_number, row.consent ? '등록 완료' : '미등록', ...registrationValues(row)]) {
         const td = document.createElement('td');
-        td.textContent = value;
+        td.textContent = value || '—';
         tr.append(td);
       }
       const actions = document.createElement('td');
@@ -233,7 +239,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     const url = URL.createObjectURL(new Blob(['\uFEFF' + rows.map(row => row.map(cell).join(',')).join('\r\n')], {type:'text/csv;charset=utf-8'}));
     const anchor = document.createElement('a'); anchor.href=url; anchor.download=filename; anchor.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
   }
-  get('enhypenCsv').onclick = () => download([['이메일','닉네임','개인 당첨 번호','정보 등록 상태','이름','연락처'],...visibleRows().map(row => [row.email,row.nickname,row.winner_number,row.consent?'등록 완료':'미등록',row.consent?.legal_name,row.consent?.phone])],`enhypen-${kind}.csv`);
+  get('enhypenCsv').onclick = () => download([['가입 이메일','닉네임','개인 당첨 번호','정보 등록 상태','이름','생년월일','국적','연락처','번호 구분','방청 안내용 이메일','X 계정'],...visibleRows().map(row => [row.email,row.nickname,row.winner_number,row.consent?'등록 완료':'미등록',...registrationValues(row)])],`enhypen-${kind}.csv`);
   get('enhypenWeverseCsv').onclick = () => download([['이름','연락처','개인 당첨 번호'],...state.winners.filter(row => row.selection === 'primary' && row.consent).map(row => [row.consent.legal_name,row.consent.phone,row.winner_number])],'enhypen-weverse.csv');
 
   return {

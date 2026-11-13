@@ -16,6 +16,7 @@ let winner;
 let identity;
 let consentMessage = '';
 const consentForm = byId('consent-form');
+const country = byId('country');
 try { token = sessionStorage.getItem('muniverse-attendee-console-v3') || ''; } catch {}
 
 function render() {
@@ -33,6 +34,31 @@ function render() {
   byId('winner-status').textContent = copy[consentMessage || (winner?.agreed ? 'accepted' : winner?.expired ? 'expired' : '')] || '';
   byId('deadline').textContent = winner?.deadline && !winner.agreed ? `${copy.deadlineText} · ${new Intl.DateTimeFormat(lang.value,{timeZone:'Asia/Seoul',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(winner.deadline))} (KST)` : '';
   byId('attendance-list').replaceChildren(...copy.attendance.map(text => {const li=document.createElement('li');li.textContent=text;return li;}));
+  if (country.dataset.language !== lang.value) {
+    const value = country.value;
+    const names = new Intl.DisplayNames([lang.value], {type:'region'});
+    const regions = countryCodes.filter(code=>code !== 'KR').map(code=>[code,names.of(code) || code]);
+    const sort = new Intl.Collator(lang.value);
+    regions.sort((a,b)=>sort.compare(a[1],b[1]));
+    country.replaceChildren(new Option(copy.country,'',false),...regions.map(([code,label])=>new Option(label,code)));
+    country.value = value;
+    country.dataset.language = lang.value;
+  }
+  syncFields(copy);
+}
+
+function syncFields(copy = consentCopy[lang.value]) {
+  const other = consentForm.elements['nationality-mode'].value === 'OTHER';
+  const koreanPhone = consentForm.elements['phone-mode'].value === 'KR';
+  byId('country-wrap').hidden = !other;
+  country.disabled = !other;
+  country.required = other;
+  for (const [prefix,show] of [['korean',koreanPhone],['intl',!koreanPhone]]) {
+    byId(`${prefix}-phone-wrap`).hidden = !show;
+    byId(`${prefix}-phone`).disabled = !show;
+    byId(`${prefix}-phone`).required = show;
+  }
+  byId('phone-hint').textContent = koreanPhone ? copy.krHint : copy.intlHint;
 }
 
 async function request(body, withToken = false) {
@@ -85,7 +111,7 @@ form.addEventListener('submit', async event => {
     const data = await request({action:'lookup', ...account});
     resultKey = data.selection;
     winnerNumber = data.selection === 'primary' ? data.number : '';
-    if (data.selection === 'primary') { winner = data; identity = account; }
+    if (data.selection === 'primary') { winner = data; identity = account; byId('contact-email').value = account.email.trim(); }
     form.reset();
   } catch (error) {
     if (error.message === 'ANNOUNCEMENT_CLOSED') {
@@ -110,15 +136,22 @@ consentForm.addEventListener('submit', async event => {
   button.disabled = true;
   consentMessage = '';
   try {
-    await request({action:'consent', ...identity, name:byId('legal-name').value, phone:byId('phone').value, language:lang.value, collectionAgreed:true, agreed:true, version:'2026-11-13-v1'});
+    const phoneMode = consentForm.elements['phone-mode'].value;
+    await request({action:'consent', ...identity, name:byId('legal-name').value, phoneMode,
+      phone:byId(phoneMode === 'KR' ? 'korean-phone' : 'intl-phone').value,
+      birthDate:byId('birth-date').value, contactEmail:byId('contact-email').value,
+      nationality:consentForm.elements['nationality-mode'].value === 'KR' ? 'KR' : country.value,
+      xAccount:byId('x-account').value, language:lang.value, collectionAgreed:true, agreed:true, version:'2026-11-13-v2'});
     winner.agreed = true;
     consentForm.reset();
     identity = undefined;
   } catch (error) {
     if (error.message === 'CONSENT_DEADLINE') winner.expired = true;
-    else consentMessage = {RATE_LIMITED:'rate',INVALID_FIELDS:'formInvalid'}[error.message] || 'failed';
+    else consentMessage = {RATE_LIMITED:'rate',INVALID_FIELDS:'formInvalid',INVALID_PHONE:'phoneInvalid',INVALID_X:'xInvalid'}[error.message] || 'failed';
   } finally { agree.disabled = false; button.disabled = false; render(); }
 });
+
+consentForm.addEventListener('change', event => { if (event.target.matches('input[type="radio"]')) syncFields(); });
 
 lang.addEventListener('change', render);
 const suggested = navigator.languages.find(language => /^(ko|en|ja|zh)(-|$)/i.test(language));
