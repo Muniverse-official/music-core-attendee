@@ -84,6 +84,7 @@
 .attendance-compact .hero {
   position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center stretch;
   isolation: isolate;
   overflow: hidden;
@@ -107,26 +108,25 @@
 .attendance-compact :is(.hero-orb, .grid-overlay, .hero-spark, .hero .eyebrow, .hero-copy > p, .stepper, .verify-art, .number-badge, .steps) { display: none; }
 .attendance-compact .hero-inner {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   position: relative;
-  gap: 16px;
+  gap: 10px;
   width: 100%;
   min-width: 0;
   min-height: 0;
   padding: 0;
   margin: 0;
-  text-align: left;
+  text-align: center;
 }
 .attendance-compact .hero-inner::before,
 .attendance-compact .hero-inner::after { content: none; }
 .attendance-compact .program-logo { flex: none; width: 78px; height: auto; }
-.attendance-compact .hero-copy { width: auto; min-width: 0; margin: 0; text-align: left; }
-.attendance-compact .hero-content { min-width: 0; }
-.attendance-compact .fans-wordmark { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; color: var(--accent); }
-.attendance-compact .fans-wordmark :is(.its, .cover) { font-size: 15px; line-height: 1.22; letter-spacing: 0; font-weight: 800; }
+.attendance-compact .hero-copy { width: 100%; min-width: 0; margin: 0; }
+.attendance-compact[data-attendee-program="fans_pick"] .program-logo { width: clamp(92px, 27vw, 132px); }
 .attendance-compact .hero #heroTitle {
-  margin: 6px 0 0;
+  margin: 0;
   color: var(--text);
   font-size: clamp(23px, 5vw, 35px);
   font-weight: 840;
@@ -134,9 +134,8 @@
   line-height: 1.17;
   white-space: normal;
   overflow-wrap: anywhere;
-  text-align: left;
+  text-align: center;
 }
-.attendance-compact[data-attendee-program="music_core"] #heroTitle { margin-top: 0; }
 .attendance-compact .hero #heroTitle em {
   color: var(--accent);
   font-size: .82em;
@@ -158,6 +157,11 @@
 .attendance-compact .verify-layout { display: block; padding: 0; margin: 0; }
 .attendance-compact .form-side { min-width: 0; }
 .attendance-compact .section-heading { display: block; margin: 0 0 16px; padding: 0; }
+.attendance-compact :is(.section-heading, .card h1, .card h2, .card .lead, .account-help, .message, .already-panel, .done-content, .reserve-panel) {
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.attendance-compact .done-content { flex-direction: column; justify-content: center; align-items: center; }
 .attendance-compact :is(.section-heading h2, .card h1, .reserve-panel h2) {
   margin: 0 0 6px;
   font-size: 22px;
@@ -240,7 +244,7 @@
   .attendance-compact .topbar { min-height: 54px; margin-bottom: 6px; }
   .attendance-compact .brand-home img { width: 132px; }
   .attendance-compact .hero { min-height: 112px; padding: 14px 17px; border-radius: 13px; }
-  .attendance-compact .hero-inner { gap: 12px; }
+  .attendance-compact .hero-inner { gap: 8px; }
   .attendance-compact .program-logo { width: clamp(55px, 16vw, 64px); }
   .attendance-compact .hero #heroTitle { font-size: clamp(21px, 6vw, 27px); }
   .attendance-compact :is(.panel, .card, #closedCard.closed-card) { padding: 16px 17px; margin-top: 12px; border-radius: 12px; }
