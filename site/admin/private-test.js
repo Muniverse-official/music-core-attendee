@@ -7,6 +7,13 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   tab.hidden = true;
   tab.setAttribute('aria-pressed', 'false');
   tabs.append(tab);
+  const fingerTab = document.createElement('button');
+  fingerTab.type = 'button';
+  fingerTab.textContent = '4. 아이돌 핑거왕';
+  fingerTab.id = 'fingerKingTab';
+  fingerTab.setAttribute('aria-pressed', 'false');
+  fingerTab.setAttribute('aria-controls', 'fingerKingPanel');
+  tabs.append(fingerTab);
   const existing = document.createElement('div');
   const settings = dashboard.querySelector('.extra');
   dashboard.insertBefore(existing, tabs.nextElementSibling);
@@ -25,6 +32,20 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   <p id="enhypenEmpty" class="empty">등록된 명단이 없습니다.</p>
   <dialog id="enhypenNumber" aria-labelledby="enhypenNumberTitle"><form id="enhypenNumberForm"><h2 id="enhypenNumberTitle"></h2><p id="enhypenNumberName"></p><label>개인 당첨 번호<input id="enhypenNumberValue" type="text" inputmode="numeric" pattern="[0-9]{1,16}" maxlength="16" required></label><label id="enhypenDeadlineWrap" hidden>정보 입력 기한 (한국시간)<input id="enhypenDeadline" type="datetime-local"></label><p class="muted small">다른 당첨자와 중복되지 않는 숫자를 입력하세요.</p><p id="enhypenNumberMessage" role="status" class="message"></p><div class="actions"><button id="enhypenNumberCancel" class="secondary" type="button">취소</button><button type="submit">저장</button></div></form></dialog>`;
   dashboard.insertBefore(panel, settings);
+  const fingerPanel = document.createElement('section');
+  fingerPanel.className = 'card';
+  fingerPanel.id = 'fingerKingPanel';
+  fingerPanel.hidden = true;
+  fingerPanel.setAttribute('aria-labelledby', 'fingerKingTitle');
+  fingerPanel.innerHTML = `<div class="section-head"><h2 id="fingerKingTitle">아이돌 핑거왕</h2></div>
+    <p>투표명별로 발표 기간, 당첨자 명단과 경품 배송을 관리합니다.</p>
+    <div class="actions">
+      <a id="fingerKingAdmin" href="https://muniverse-idol-finger-king.lkr9912.chatgpt.site/admin" target="_blank" rel="noopener noreferrer">투표명·당첨자·배송 관리 ↗</a>
+      <a href="https://muniverse-idol-finger-king.lkr9912.chatgpt.site/" target="_blank" rel="noopener noreferrer">당첨자 조회 페이지 ↗</a>
+      <a href="https://muniverse-idol-finger-king.lkr9912.chatgpt.site/preview" target="_blank" rel="noopener noreferrer">배송지 입력창 검수 ↗</a>
+    </div>
+    <p class="muted small">핑거왕 관리 화면은 운영 권한이 있는 ChatGPT 계정으로 열립니다.</p>`;
+  dashboard.insertBefore(fingerPanel, settings);
   const message = document.getElementById('enhypenTestMessage');
   const pause = document.getElementById('enhypenTestPause');
   const open = document.getElementById('enhypenTestOpen');
@@ -188,18 +209,30 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     editing = undefined;
     setLoading(false);
     panel.hidden = true;
+    fingerPanel.hidden = true;
+    fingerTab.setAttribute('aria-pressed', 'false');
     existing.hidden = false;
     tab.setAttribute('aria-pressed', 'false');
   }
 
   tab.onclick = async () => {
     if (active || !getToken() || !await beforeSwitch()) return;
+    leave();
     active = true;
     existing.hidden = true;
     panel.hidden = false;
     tab.setAttribute('aria-pressed', 'true');
     document.querySelectorAll('[data-program]').forEach(button => button.setAttribute('aria-pressed', 'false'));
     await run({action:'state'});
+  };
+  fingerTab.onclick = async () => {
+    if (!fingerPanel.hidden || !getToken() || !await beforeSwitch()) return;
+    if (active && input.value.trim() && !confirm('저장하지 않은 엔하이픈 명단을 버리고 이동할까요?')) return;
+    leave();
+    existing.hidden = true;
+    fingerPanel.hidden = false;
+    fingerTab.setAttribute('aria-pressed', 'true');
+    tabs.querySelectorAll('[data-program]').forEach(button => button.setAttribute('aria-pressed', 'false'));
   };
   pause.onclick = () => {
     if (!state.open && !confirm('발표를 공개할까요? 링크를 아는 당첨자는 지금부터 결과를 확인할 수 있습니다.')) return;
@@ -244,7 +277,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
 
   return {
     leave,
-    get active() { return active; },
+    get active() { return active || !fingerPanel.hidden; },
     hide() { tab.hidden = true; leave(); },
     async enable() {
       const token = getToken();

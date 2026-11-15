@@ -75,6 +75,13 @@ for(const csvText of [records,fansRecords])for(const value of ['2000-01-01','819
 assert.match(fansRecords,/Fans Reserve QA/);assert.match(fansRecords,/예비 당첨자/);
 await admin.click('#winnersTab');await admin.locator('#winnerRows tr').first().getByRole('button',{name:'본 당첨자로 전환'}).click();await admin.click('#confirmAccept');await admin.waitForFunction(()=>document.body.getAttribute('aria-busy')==='false');assert.equal(writes.at(-1).program,'fans_pick');
 await admin.click('#attendeesTab');await admin.selectOption('#attendeeSelection','all');assert.match(await admin.locator('#attendeeRows').textContent(),/Fans Reserve QA/);assert.doesNotMatch(await admin.locator('#attendeeRows').textContent(),/예비 당첨자/);
+await admin.click('#fingerKingTab');
+assert.equal(await admin.locator('#fingerKingPanel').isVisible(),true);
+assert.equal(await admin.locator('#roundList').isVisible(),false);
+assert.equal(await admin.locator('#fingerKingAdmin').getAttribute('href'),'https://muniverse-idol-finger-king.lkr9912.chatgpt.site/admin');
+await admin.click('[data-program="fans_pick"]');
+assert.equal(await admin.locator('#fingerKingPanel').isVisible(),false);
+assert.equal(await admin.locator('#roundList').isVisible(),true);
 await admin.click('#logout');await admin.locator('#loginPanel').waitFor({state:'visible'});assert.equal(await admin.locator('#attendeeRows tr').count(),0);assert.deepEqual(errors,[]);
 console.log('PASS reserve same fields + foreign phone registration, all five languages through completion and repeated lookup, primary registration, separate lists, registration filter and CSV, promotion, FANS PICK compatibility');
 }catch(error){for(const [index,page] of context.pages().entries())await page.screenshot({path:path.join(base,'qa-screenshots/reserve-failure-'+index+'.png'),fullPage:true}).catch(()=>{});console.error('PAGE ERRORS',errors);throw error}finally{await browser.close()}
