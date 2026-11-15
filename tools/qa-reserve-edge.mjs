@@ -13,7 +13,7 @@ const context=vm.createContext({Deno:{env:{get:k=>k==='SUPABASE_URL'?'https://ex
  }});
 vm.runInContext(stripTypeScriptTypes(fs.readFileSync(base+'/supabase/functions/attendee-public/index.ts','utf8'),{mode:'transform'}),context);
 function req(program,action,body){return new Request('https://example.invalid/?program='+program+'&action='+action,{method:'POST',headers:{origin:'https://muniverse-official.github.io','content-type':'application/json',[program==='music_core'?'x-music-core-request':'x-cover-pick-request']:'1','user-agent':'qa','x-real-ip':'192.0.2.1'},body:JSON.stringify(body)})}
-const identity={email:'qa@example.invalid',nickname:'QA',privacy_consent:true};
+const identity={email:'qa@example.invalid',nickname:'QA'};
 for(const program of ['music_core','fans_pick']){
 submitted=false;reserve=true;commits=0;
 let response=await handler(req(program,'verify',identity)),out=await response.json();

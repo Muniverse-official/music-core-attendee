@@ -5,32 +5,27 @@
     ko: {
       label: 'X 계정',
       hint: '@아이디 또는 X 프로필 주소를 입력해 주세요. (예: @Muniverse_io)',
-      invalid: 'X 계정 형식을 확인해 주세요. (예: @username)',
-      collectionSuffix: ', X 계정'
+      invalid: 'X 계정 형식을 확인해 주세요. (예: @username)'
     },
     en: {
       label: 'X account',
       hint: 'Enter @username or an X profile URL. (e.g. @Muniverse_io)',
-      invalid: 'Check the X account format. (e.g. @username)',
-      collectionSuffix: ', and X account'
+      invalid: 'Check the X account format. (e.g. @username)'
     },
     ja: {
       label: 'Xアカウント',
       hint: '@ユーザー名またはXプロフィールURLを入力してください。（例：@Muniverse_io）',
-      invalid: 'Xアカウントの形式を確認してください。（例：@username）',
-      collectionSuffix: '、Xアカウント'
+      invalid: 'Xアカウントの形式を確認してください。（例：@username）'
     },
     'zh-TW': {
       label: 'X 帳號',
       hint: '請輸入 @使用者名稱或 X 個人檔案網址。（例：@Muniverse_io）',
-      invalid: '請確認 X 帳號格式。（例：@username）',
-      collectionSuffix: '、X 帳號'
+      invalid: '請確認 X 帳號格式。（例：@username）'
     },
     'zh-CN': {
       label: 'X 账号',
       hint: '请输入 @用户名或 X 个人主页网址。（例：@Muniverse_io）',
-      invalid: '请确认 X 账号格式。（例：@username）',
-      collectionSuffix: '、X 账号'
+      invalid: '请确认 X 账号格式。（例：@username）'
     }
   };
 
@@ -46,21 +41,9 @@
     return `@${raw}`;
   }
 
-  function patchPrivacyNotice() {
-    const collectedItems = $('privacyText')?.querySelector('.privacy-grid > div:nth-child(2) dd');
-    if (!collectedItems) return;
-    const suffixNode = collectedItems.querySelector('[data-music-core-x-copy]');
-    if (suffixNode) suffixNode.remove();
-    const span = document.createElement('span');
-    span.dataset.musicCoreXCopy = '1';
-    span.textContent = currentCopy().collectionSuffix;
-    collectedItems.append(span);
-  }
-
   function applyLanguage() {
     if ($('xAccountLabel')) $('xAccountLabel').textContent = currentCopy().label;
     if ($('xAccountHint')) $('xAccountHint').textContent = currentCopy().hint;
-    patchPrivacyNotice();
   }
 
   function clearMessage() {

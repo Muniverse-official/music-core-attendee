@@ -41,8 +41,7 @@
           <div class="field"><label for="email" id="emailLabel">Muniverse 가입 이메일</label><div class="input-wrap"><span aria-hidden="true">✉</span><input id="email" type="email" maxlength="254" autocomplete="email" inputmode="email" placeholder="name@example.com"></div></div>
           <div class="field"><label for="nickname" id="nicknameLabel">뮤니버스 닉네임</label><div class="input-wrap"><input id="nickname" maxlength="80" autocomplete="off"></div></div>
           <div class="honeypot" aria-hidden="true"><label for="website">Website</label><input id="website" tabindex="-1" autocomplete="off"></div>
-          <details class="privacy"><summary id="privacyTitle">개인정보 수집·이용 안내</summary><div id="privacyText" class="privacy-content"></div></details>
-          <label class="consent-card" for="consent"><input id="consent" type="checkbox"><span class="check-ui" aria-hidden="true">✓</span><span id="consentLabel">[필수] 개인정보 수집·이용 안내를 읽고 동의합니다.</span></label>
+
           <div class="message" id="verifyMessage" role="status" aria-live="polite"></div>
           <button id="verifyBtn" class="pixel-button" type="button" disabled><span id="verifyBtnText">당첨자 확인</span><b aria-hidden="true">›</b></button>
         </div>
@@ -68,6 +67,8 @@
       <div class="field full"><label for="xAccount" id="xAccountLabel">X 계정</label><div class="input-wrap"><span aria-hidden="true">@</span><input id="xAccount" type="text" maxlength="100" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@username" aria-describedby="xAccountHint"></div><p class="hint" id="xAccountHint">@아이디 또는 X 프로필 주소를 입력해 주세요. (예: @Muniverse_io)</p></div>
       <div class="field full"><label for="contactEmail" id="contactLabel">이메일</label><div class="input-wrap"><span aria-hidden="true">✉</span><input id="contactEmail" type="email" maxlength="254" autocomplete="email"></div><p class="hint" id="contactHint">방청 안내는 문자로 별도 안내됩니다. 한국 번호가 없는 경우 X DM으로 안내됩니다.</p></div>
       <div class="important-note"><div class="megaphone" aria-hidden="true">◖</div><p id="noticeText"><strong>만 15세 이상</strong>만 참여할 수 있습니다. 녹화 당일 유효한 사진 신분증 지참이 필수이며, 방청권 양도·판매·명의 변경은 불가합니다.</p></div>
+      <details class="privacy"><summary id="privacyTitle">개인정보 수집·이용 안내</summary><div id="privacyText" class="privacy-content"></div></details>
+          <label class="consent-card" for="consent"><input id="consent" type="checkbox" required><span class="check-ui" aria-hidden="true">✓</span><span id="consentLabel">[필수] 개인정보 수집·이용 안내를 읽고 동의합니다.</span></label>
       <div class="message error" id="submitMessage" role="status" aria-live="polite"></div><button id="submitBtn" class="pixel-button centered" type="button"><span id="submitBtnText">제출하기</span><b aria-hidden="true">›</b></button>
     </section>
     <section class="panel done-panel hidden" id="done" aria-live="polite">
@@ -77,13 +78,13 @@
     <section class="panel hidden already-panel" id="already" aria-live="polite"><strong id="alreadyMessage">이미 방청자 정보 등록이 완료되었습니다.</strong><p id="alreadyReserveNote" class="hidden"></p><p id="alreadyHelp">등록 정보 수정이 필요한 경우 support@muniverse.io로 문의해 주세요.</p></section>
     <footer><a href="mailto:support@muniverse.io">support@muniverse.io</a><small>© Muniverse. All rights reserved.</small></footer>
   </main>
-  <script src="./i18n.js" defer></script>
+  <script src="./i18n.js?v=20261115-consent" defer></script>
   <script src="./availability.js?v=20260908-qa9" defer></script>
   <script src="./backend-router.js?v=20260908-qa9" defer></script>
-  <script src="./app.js?v=20260916-reserve-final-notice1" defer></script>
+  <script src="./app.js?v=20261115-consent" defer></script>
   <script src="./title-copy.js?v=20260914-reserve2" defer></script>
   <script src="./phone.js" defer></script>
-  <script src="./x-account.js?v=20260904-x2" defer></script>
+  <script src="./x-account.js?v=20261115-x-copy" defer></script>
   <script src="./submitted-lock.js?v=20260914-reserve2" defer></script>
   <script src="./ui.js?v=20260914-reserve2" defer></script>
 </body></html>

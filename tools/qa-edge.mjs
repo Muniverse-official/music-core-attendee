@@ -11,17 +11,21 @@ const results=[];
 function req(p,action,b,headers={},method='POST') {return new Request('https://example.invalid/functions/v1/attendee-public?program='+p+'&action='+action,{method,headers:{origin:'https://muniverse-official.github.io','content-type':'application/json',[p==='music_core'?'x-music-core-request':'x-cover-pick-request']:'1','user-agent':'qa-agent','x-real-ip':'192.0.2.1',...headers},body:method==='POST'?(typeof b==='string'?b:JSON.stringify(b)):undefined});}
 async function test(name,request,expected,expectedCode){let r=await handler(request),j;try{j=await r.json()}catch{}results.push({name,pass:r.status===expected&&(!expectedCode||j?.code===expectedCode),status:r.status,code:j?.code});return j;}
 for(const p of ['music_core','fans_pick']){
- const v={email:'qa@example.invalid',nickname:'qa',privacy_consent:true};
+ const v={email:'qa@example.invalid',nickname:'qa'};
  const beforeClock=calls.length;await test(p+':clock_without_database',req(p,'clock',{}, {},'GET'),200);results.push({name:p+':clock_does_not_read_database',pass:calls.length===beforeClock});await test(p+':clock_rejects_other_origin',req(p,'clock',{}, {origin:'https://other.invalid'},'GET'),403,'ORIGIN_DENIED');
  await test(p+':reject_origin',req(p,'verify',v,{origin:'https://other.invalid'}),403,'ORIGIN_DENIED');
  await test(p+':cors_preflight',req(p,'verify',{}, {},'OPTIONS'),204);
  await test(p+':reject_method',req(p,'verify',{}, {},'GET'),405);
  await test(p+':reject_json',req(p,'verify','{'),400,'INVALID_JSON');
- await test(p+':reject_no_consent',req(p,'verify',{...v,privacy_consent:false}),400,'CONSENT_REQUIRED');
  await test(p+':reject_honeypot',req(p,'verify',{...v,website:'bot'}),404,p==='music_core'?'WINNER_MISMATCH':'IDENTITY_MISMATCH');
  await test(p+':reject_missing_identity',req(p,'verify',{...v,nickname:''}),400,'MISSING_FIELDS');
- const verified=await test(p+':issue_verification_token',req(p,'verify',v),200);
+ const verified=await test(p+':verify_without_consent',req(p,'verify',v),200);
  const submission={privacy_consent:true,token:verified.token,account_email:v.email,muniverse_nickname:v.nickname,name:'QA',nationality:'KR',birth_date:'2000-01-01',phone:'010-1234-5678',x_account:'https://x.com/qa_test',contact_email:v.email};
+ const beforeConsent=calls.length;
+ const {privacy_consent,...withoutConsent}=submission;
+ await test(p+':reject_missing_submit_consent',req(p,'submit',withoutConsent),400,'CONSENT_REQUIRED');
+ await test(p+':reject_declined_submit_consent',req(p,'submit',{...submission,privacy_consent:false}),400,'CONSENT_REQUIRED');
+ results.push({name:p+':no_write_without_consent',pass:calls.length===beforeConsent});
  await test(p+':reject_tampered_token',req(p,'submit',{...submission,token:verified.token+'x'}),401,'SESSION_INVALID');
  await test(p+':reject_changed_ip',req(p,'submit',submission,{'x-real-ip':'192.0.2.2'}),401,'SESSION_INVALID');
  await test(p+':reject_changed_user_agent',req(p,'submit',submission,{'user-agent':'other-agent'}),401,'SESSION_INVALID');
