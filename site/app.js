@@ -157,6 +157,7 @@
   function applyLanguage() {
     document.documentElement.lang = lang(); setText('heroTitle', t('heroTitle'), true); setText('heroDesc', t('heroDesc'));
     t('steps').forEach((label, index) => setText(`stepLabel${index + 1}`, label)); setText('verifyTitle', t('verifyTitle')); setText('verifyDesc', t('verifyDesc'));
+    setText('verifyAccountHelp', t('accountHelp'));
     setText('emailLabel', t('email')); setText('nicknameLabel', t('nickname')); setText('privacyTitle', t('privacyTitle')); setText('privacyText', t('privacy'), true);
     setText('consentLabel', t('consent')); setText('verifyBtnText', t('verifyBtn')); setText('infoTitle', t('infoTitle')); setText('infoDesc', t('infoDesc')); setText('eventDateLabel', t('eventDate'));
     setText('nameLabel', t('name')); setText('nationalityLabel', t('nationality')); setText('birthLabel', t('birth')); setText('phoneLabel', t('phone')); setText('contactLabel', t('contact')); setText('contactHint', t('contactHint'));

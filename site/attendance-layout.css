@@ -174,6 +174,17 @@ html:has(> body.attendance-compact) { min-width: 0; }
 .attendance-compact :is(.section-heading p, .card .lead, .hint, .account-help, .done-content p, .closed-lead, .already-panel p, footer) { color: var(--support); }
 .attendance-compact :is(.card .lead, .account-help) { margin: 0 0 13px; font-size: 13px; }
 .attendance-compact .account-help { font-size: 12px; }
+.attendance-compact :is(#verifyDesc, #verifyAccountHelp, #step1Desc, #step1AccountHelp) {
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: -.015em;
+  white-space: pre-line;
+  text-wrap: balance;
+}
+.attendance-compact :is(#verifyDesc, #step1Desc) { margin: 0 0 7px; }
+.attendance-compact #verifyAccountHelp { margin: 0; }
+.attendance-compact:lang(ko) :is(#verifyDesc, #verifyAccountHelp, #step1Desc, #step1AccountHelp) { word-break: keep-all; }
+.attendance-compact :is(.hero h1, .section-heading h2, .card h1, .card h2) { text-wrap: balance; }
 .attendance-compact .field { margin: 0 0 13px; min-width: 0; }
 .attendance-compact .field label { color: var(--text); }
 .attendance-compact .field :is(input:not([type="radio"]), select),
