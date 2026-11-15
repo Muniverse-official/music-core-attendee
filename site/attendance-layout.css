@@ -1,3 +1,5 @@
+html:has(> body.attendance-compact) { min-width: 0; }
+
 .attendance-compact {
   --page: #080d20;
   --surface: #111a33;
@@ -52,7 +54,7 @@
 .attendance-compact .brand-home { display: block; flex: none; }
 .attendance-compact .brand-home img { display: block; width: 163px; height: auto; }
 .attendance-compact .language-picker {
-  position: relative;
+  position: static;
   display: block;
   min-width: 0;
   width: auto;
