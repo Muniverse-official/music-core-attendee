@@ -38,13 +38,22 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   fingerPanel.hidden = true;
   fingerPanel.setAttribute('aria-labelledby', 'fingerKingTitle');
   fingerPanel.innerHTML = `<div class="section-head"><h2 id="fingerKingTitle">아이돌 핑거왕</h2></div>
-    <p>투표명별로 발표 기간, 당첨자 명단과 경품 배송을 관리합니다.</p>
     <div class="actions">
-      <a id="fingerKingAdmin" href="https://muniverse-idol-finger-king.lkr9912.chatgpt.site/admin" target="_blank" rel="noopener noreferrer">투표명·당첨자·배송 관리 ↗</a>
-      <a href="https://muniverse-idol-finger-king.lkr9912.chatgpt.site/" target="_blank" rel="noopener noreferrer">당첨자 조회 페이지 ↗</a>
-      <a href="https://muniverse-idol-finger-king.lkr9912.chatgpt.site/preview" target="_blank" rel="noopener noreferrer">배송지 입력창 검수 ↗</a>
+      <a href="../finger-king/" target="_blank" rel="noopener noreferrer">당첨자 조회 페이지 ↗</a>
+      <a href="../finger-king/?preview=delivery" target="_blank" rel="noopener noreferrer">배송지 입력창 검수 ↗</a>
     </div>
-    <p class="muted small">핑거왕 관리 화면은 운영 권한이 있는 ChatGPT 계정으로 열립니다.</p>`;
+    <div id="fingerKingWorkspace"></div>`;
+  const fingerWorkspace = fingerPanel.querySelector('#fingerKingWorkspace');
+  let fingerFrame;
+  window.addEventListener('message', (event) => {
+    if (event.origin !== location.origin || !fingerFrame || event.source !== fingerFrame.contentWindow) return;
+    if (event.data?.type === 'finger-admin-ready' && getToken()) {
+      fingerFrame.contentWindow.postMessage({ type: 'finger-admin-session', token: getToken() }, location.origin);
+    }
+    if (event.data?.type === 'finger-admin-height' && Number.isSafeInteger(event.data.height)) {
+      fingerFrame.height = String(Math.max(480, Math.min(3600, event.data.height)));
+    }
+  });
   dashboard.insertBefore(fingerPanel, settings);
   const message = document.getElementById('enhypenTestMessage');
   const pause = document.getElementById('enhypenTestPause');
@@ -210,6 +219,8 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     setLoading(false);
     panel.hidden = true;
     fingerPanel.hidden = true;
+    fingerFrame?.remove();
+    fingerFrame = undefined;
     fingerTab.setAttribute('aria-pressed', 'false');
     existing.hidden = false;
     tab.setAttribute('aria-pressed', 'false');
@@ -231,6 +242,11 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     leave();
     existing.hidden = true;
     fingerPanel.hidden = false;
+    fingerFrame = document.createElement('iframe');
+    fingerFrame.title = '아이돌 핑거왕 운영 관리';
+    fingerFrame.src = '../finger-king/admin.html';
+    fingerFrame.height = '640';
+    fingerWorkspace.replaceChildren(fingerFrame);
     fingerTab.setAttribute('aria-pressed', 'true');
     tabs.querySelectorAll('[data-program]').forEach(button => button.setAttribute('aria-pressed', 'false'));
   };
@@ -239,7 +255,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     void run({action:'visibility', open:!state.open});
   };
   refresh.onclick = () => run({action:'state'});
-  open.onclick = () => { location.assign('../private-test/'); };
+  open.onclick = () => { location.assign('../enhypen/'); };
   kindButtons.forEach(button => { button.onclick = () => {
     if (!state || loading || kind === button.dataset.enhypenKind) return;
     if (input.value.trim() && !confirm('저장하지 않은 명단을 지우고 이동할까요?')) return;

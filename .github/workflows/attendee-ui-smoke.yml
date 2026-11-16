@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - 'programs/finger-king/**'
       - 'site/**'
       - 'tools/*smoke.mjs'
       - '.github/workflows/attendee-ui-smoke.yml'
@@ -12,6 +13,7 @@ on:
       - '.github/workflows/attendee-ui-smoke.yml'
       - 'tools/admin-ui-smoke.mjs'
       - 'tools/reserve-ui-smoke.mjs'
+      - 'programs/finger-king/**'
       - 'site/**'
       - 'site/admin/**'
 permissions:
@@ -28,6 +30,10 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Check admin login and latest-round UI
         run: node tools/admin-ui-smoke.mjs
+      - name: Build Finger King for the integrated console test
+        run: |
+          npm ci --prefix programs/finger-king
+          npm run build --prefix programs/finger-king
       - name: Check reserve result and separate administrator lists
         run: node tools/reserve-ui-smoke.mjs
       - name: Save screenshot

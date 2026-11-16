@@ -42,6 +42,15 @@ jobs:
           node tools/qa-reserve-edge.mjs
           node tools/qa-remediation.mjs
           node tools/qa-worker.mjs
+      - name: Build Finger King and publish the ENHYPEN entry point
+        run: |
+          npm ci --prefix programs/finger-king
+          npm run build --prefix programs/finger-king
+          cp -R site/private-test site/enhypen
+      - name: Verify the live program endpoints
+        run: |
+          curl -fsS --retry 2 "https://kkaoerbblpuszptiibvo.supabase.co/functions/v1/finger-king?action=status" | node -e "let s='';process.stdin.on('data',x=>s+=x);process.stdin.on('end',()=>{if(!Array.isArray(JSON.parse(s).groups))process.exitCode=1})"
+          curl -fsS --retry 2 -H "Origin: https://muniverse-official.github.io" -H "Content-Type: application/json" -H "X-Admin-Request: 1" --data '{"action":"preview"}' "https://kkaoerbblpuszptiibvo.supabase.co/functions/v1/attendee-private-test" | node -e "let s='';process.stdin.on('data',x=>s+=x);process.stdin.on('end',()=>{if(JSON.parse(s).ok!==true)process.exitCode=1})"
       - name: Configure Pages
         uses: actions/configure-pages@v6
         with:

@@ -75,12 +75,23 @@ for(const csvText of [records,fansRecords])for(const value of ['2000-01-01','819
 assert.match(fansRecords,/Fans Reserve QA/);assert.match(fansRecords,/예비 당첨자/);
 await admin.click('#winnersTab');await admin.locator('#winnerRows tr').first().getByRole('button',{name:'본 당첨자로 전환'}).click();await admin.click('#confirmAccept');await admin.waitForFunction(()=>document.body.getAttribute('aria-busy')==='false');assert.equal(writes.at(-1).program,'fans_pick');
 await admin.click('#attendeesTab');await admin.selectOption('#attendeeSelection','all');assert.match(await admin.locator('#attendeeRows').textContent(),/Fans Reserve QA/);assert.doesNotMatch(await admin.locator('#attendeeRows').textContent(),/예비 당첨자/);
+const fingerCalls=[];
+await context.route(origin+'/functions/v1/finger-king?**',async route=>{
+  const request=route.request();
+  const headers={'access-control-allow-origin':host,'access-control-allow-headers':'content-type,authorization','access-control-allow-methods':'POST,OPTIONS'};
+  if(request.method()==='OPTIONS')return route.fulfill({status:204,headers});
+  const action=new URL(request.url()).searchParams.get('action');
+  fingerCalls.push({action,session:request.headers().authorization});
+  return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify({rounds:[]})});
+});
 await admin.click('#fingerKingTab');
 assert.equal(await admin.locator('#fingerKingPanel').isVisible(),true);
 assert.equal(await admin.locator('#roundList').isVisible(),false);
-assert.equal(await admin.locator('#fingerKingAdmin').getAttribute('href'),'https://muniverse-idol-finger-king.lkr9912.chatgpt.site/admin');
+await admin.frameLocator('#fingerKingWorkspace iframe').locator('input[name="title"]').waitFor({state:'visible'});
+assert.deepEqual(fingerCalls,[{action:'admin-rounds',session:'Bearer '+'a'.repeat(64)}]);
 await admin.click('[data-program="fans_pick"]');
 assert.equal(await admin.locator('#fingerKingPanel').isVisible(),false);
+assert.equal(await admin.locator('#fingerKingWorkspace iframe').count(),0);
 assert.equal(await admin.locator('#roundList').isVisible(),true);
 await admin.click('#logout');await admin.locator('#loginPanel').waitFor({state:'visible'});assert.equal(await admin.locator('#attendeeRows tr').count(),0);assert.deepEqual(errors,[]);
 console.log('PASS reserve same fields + foreign phone registration, all five languages through completion and repeated lookup, primary registration, separate lists, registration filter and CSV, promotion, FANS PICK compatibility');
