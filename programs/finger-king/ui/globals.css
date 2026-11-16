@@ -175,9 +175,26 @@ img { display: block; max-width: 100%; }
 .metric span { font-size: 12px; color: #536482; font-weight: 700; }
 .metric strong { font-size: 25px; color: #233560; line-height: 1; font-variant-numeric: tabular-nums; }
 .metric small { font-size: 11px; padding-left: 4px; color: #536482; }
-.admin-tabs { display: flex; flex-wrap: wrap; gap: 9px; border-bottom: 1px solid #d6deee; margin-bottom: 15px; }
-.admin-tabs button { border: 0; border-bottom: 2px solid transparent; background: none; padding: 10px 9px; color: #4e5e7c; font-size: 13px; font-weight: 720; }
-.admin-tabs button.active { color: #223e8a; border-color: #344f9a; }
+.admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 15px; }
+.admin-tabs button {
+  flex: 0 1 146px;
+  min-height: 44px;
+  border: 1px solid #b8c5df;
+  border-radius: 8px;
+  background: #fff;
+  padding: 9px 12px;
+  color: #263c71;
+  font-size: 14px;
+  font-weight: 760;
+  word-break: keep-all;
+}
+.admin-tabs button:hover:not(:disabled):not(.active) { background: #e9efff; border-color: #8298c9; }
+.admin-tabs button.active { color: #fff; background: #2d4689; border-color: #2d4689; }
+.admin-sidebar .add-round { min-height: 40px; font-size: 13px; white-space: nowrap; }
+
+@media (max-width: 620px) {
+  .admin-tabs button { flex: 1 1 0; min-width: 0; padding-inline: 6px; }
+}
 .admin-panel { background: #fff; border: 1px solid #dce2ee; border-radius: 12px; padding: 20px; margin-bottom: 14px; }
 .admin-panel h2 { font-size: 17px; font-weight: 810; letter-spacing: -.024em; }
 .admin-panel > h2 { margin-bottom: 12px; }

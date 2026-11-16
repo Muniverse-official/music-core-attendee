@@ -151,7 +151,7 @@ export function AdminDashboard() {
     </div></header>
     <div className="admin-shell">
       <aside className="admin-sidebar">
-        <div className="sidebar-title"><h2>투표 목록</h2><button className="admin-quiet" type="button" disabled={busy} onClick={() => {
+        <div className="sidebar-title"><h2>투표 목록</h2><button className="admin-strong add-round" type="button" disabled={busy} onClick={() => {
           setCreating(true); setConfirmPublish(false); setError(""); setNotice("");
         }}>＋ 투표명 추가</button></div>
         <nav aria-label="이벤트 투표 목록">
