@@ -136,6 +136,15 @@ export function AdminDashboard() {
     });
   }
 
+  async function markDelivered(winner: AdminWinner) {
+    if (!window.confirm("경품 배송이 완료되었나요? 당첨자와 배송 개인정보가 파기됩니다.")) return;
+    await work(async () => {
+      await post("admin-delivered", { id: winner.id });
+      await loadWinners(activeId);
+      setNotice("배송 완료로 처리하고 개인정보를 파기했습니다.");
+    });
+  }
+
   return <div className="admin-app">
     <header className="admin-top"><div className="admin-top-wrap">
       <div className="admin-top-brand"><Brand /><span>아이돌 핑거왕 운영 관리</span></div>
@@ -193,19 +202,19 @@ export function AdminDashboard() {
               <dl className="admin-settings">
                 <dt>당첨 발표 시각</dt><dd>{formatKst(active.announce_at!)}</dd>
                 <dt>배송지 입력 마감</dt><dd>{formatKst(active.close_at!)}</dd>
-                <dt>개인정보 보유 기한</dt><dd>{formatKst(active.purge_at!)}</dd>
-                <dt>배송 범위</dt><dd>{active.territory === "kr" ? "국내 배송" : "국내·해외 배송"}</dd>
-                <dt>통관 안내·수집</dt><dd>{[active.kr_import ? "한국 수입 통관" : "", active.tw_express ? "대만 특송 EZ WAY" : ""].filter(Boolean).join(" · ") || "기본 배송"}</dd>
+
+
+
               </dl>
               {active.phase !== "completed" && active.phase !== "closed" && <>
                 <button className="admin-outline" type="button" disabled={busy} onClick={() => void changeRelease(active.paused_at ? "resume" : "pause")}>{active.paused_at ? "조회·접수 다시 열기" : "조회·접수 일시 중지"}</button>
                 <button className="admin-outline" type="button" disabled={busy} onClick={() => void changeRelease("complete")}>발표 종료</button>
               </>}
             </> : <>
-              <RoundForm key={active.id + active.title + active.announce_at + active.close_at + active.purge_at + active.territory + active.kr_import + active.tw_express}
+              <RoundForm key={active.id + active.title + active.announce_at + active.close_at}
                 round={active} save={save} busy={busy} />
               <div className="publish-box">
-                <div><strong>당첨 발표 시작 또는 예약</strong><p>저장된 일정과 경품 배송 범위를 확인해 주세요. 발표 설정 후 일정과 명단이 확정됩니다.</p></div>
+                <div><strong>당첨 발표 시작 또는 예약</strong><p>저장된 발표·접수 일정을 확인해 주세요. 발표 설정 후 일정과 명단이 확정됩니다.</p></div>
                 <button type="button" className="admin-strong" disabled={busy} onClick={() => setConfirmPublish(!confirmPublish)}>{confirmPublish ? "돌아가기" : "발표 설정"}</button>
               </div>
               {confirmPublish && <div className="publish-review">
@@ -229,7 +238,7 @@ export function AdminDashboard() {
               <button className="admin-strong" type="button" disabled={busy || !winners?.some((row) => row.hasDelivery && !row.shippedAt)} onClick={() => void download("waiting")}>발송 대기 CSV ↓</button>
               <button className="admin-outline" type="button" disabled={busy || !winners?.some((row) => row.hasDelivery)} onClick={() => void download("all")}>배송지 전체 CSV ↓</button>
             </div>
-            <WinnerTable shipping winners={winners?.filter((row) => row.submittedAt) ?? null} busy={busy} onShip={markShipped} />
+            <WinnerTable shipping winners={winners?.filter((row) => row.submittedAt) ?? null} busy={busy} onShip={markShipped} onDelivered={markDelivered} />
           </section>}
         </>}
       </main>
@@ -243,12 +252,7 @@ function RoundForm({ round, save, busy }: { round?: RoundSummary; save: (event: 
     {round && <div className="settings-grid">
       <label><span>당첨 발표 시각 <small>KST</small></span><input name="announce" type="datetime-local" defaultValue={toKstInput(round?.announce_at ?? null)} /></label>
       <label><span>배송지 입력 마감 <small>KST</small></span><input name="close" type="datetime-local" defaultValue={toKstInput(round?.close_at ?? null)} /></label>
-      <label><span>개인정보 보유 기한 <small>KST</small></span><input name="purge" type="datetime-local" defaultValue={toKstInput(round?.purge_at ?? null)} /></label>
-      <label><span>배송 범위</span><select name="territory" defaultValue={round?.territory ?? ""}>
-        <option value="">선택</option><option value="kr">국내 배송</option><option value="world">국내·해외 배송</option>
-      </select></label>
-      <label className="checkbox-row"><input type="checkbox" name="krImport" defaultChecked={round.kr_import === 1} /> 한국 배송이 해외에서 출발하는 경우 개인통관고유부호 받기</label>
-      <label className="checkbox-row"><input type="checkbox" name="twExpress" defaultChecked={round.tw_express === 1} /> 대만 특송 이용 시 EZ WAY 준비 확인 받기</label>
+
     </div>}
     <button className="admin-strong" disabled={busy}>{round ? "설정 저장" : "투표명 등록"}</button>
   </form>;
@@ -287,9 +291,9 @@ function RosterImport({ busy, onImport, onError }: { busy: boolean; onImport: (r
   </section>;
 }
 
-function WinnerTable({ winners, shipping, canRemove, busy, onRemove, onShip }: {
+function WinnerTable({ winners, shipping, canRemove, busy, onRemove, onShip, onDelivered }: {
   winners: AdminWinner[] | null; shipping?: boolean; canRemove?: boolean; busy: boolean;
-  onRemove?: (winner: AdminWinner) => void; onShip?: (winner: AdminWinner) => void;
+  onRemove?: (winner: AdminWinner) => void; onShip?: (winner: AdminWinner) => void; onDelivered?: (winner: AdminWinner) => void;
 }) {
   if (!winners) return <p className="table-empty">명단을 불러오는 중입니다…</p>;
   if (!winners.length) return <p className="table-empty">{shipping ? "접수된 배송지가 없습니다." : "등록된 당첨자가 없습니다."}</p>;
@@ -299,10 +303,10 @@ function WinnerTable({ winners, shipping, canRemove, busy, onRemove, onShip }: {
     <tbody>{winners.map((winner) => <tr key={winner.id}>
       {shipping && <td>{receiptRef(winner.id)}</td>}<td>{winner.account || "파기됨"}</td><td>{winner.nickname || "—"}</td><td>{winner.prize}</td>
       <td><span className={"row-status" + (winner.shippedAt ? " shipped" : winner.submittedAt ? " received" : "")}>
-        {winner.shippedAt ? "발송 완료" : winner.submittedAt ? (winner.hasDelivery ? "배송지 접수" : "보유 기한 만료") : "미접수"}</span></td>
+        {winner.shippedAt ? (winner.hasDelivery ? "발송 완료" : "발송 완료 · 개인정보 파기") : winner.submittedAt ? (winner.hasDelivery ? "배송지 접수" : "보유 기한 만료") : "미접수"}</span></td>
       {shipping && <td>{winner.submittedAt && formatKst(winner.submittedAt)}</td>}
       {shipping && <td><button className="admin-quiet" disabled={busy || !winner.hasDelivery} onClick={() => onShip?.(winner)}>
-        {winner.shippedAt ? "발송 대기로 변경" : "발송 완료 처리"}</button></td>}
+        {winner.shippedAt ? "발송 대기로 변경" : "발송 완료 처리"}</button>{winner.shippedAt && winner.hasDelivery && <button type="button" className="admin-quiet" disabled={busy} onClick={() => onDelivered?.(winner)}>배송 완료 · 개인정보 파기</button>}</td>}
       {canRemove && <td><button className="admin-quiet remove" disabled={busy} onClick={() => onRemove?.(winner)}>삭제</button></td>}
     </tr>)}</tbody>
   </table></div>;

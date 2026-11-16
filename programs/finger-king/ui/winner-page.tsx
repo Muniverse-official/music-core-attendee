@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { ClientError, fetchStatus, post } from "./finger-client";
-import { countryCodes, formatKst, PRIVACY_URL, SUPPORT_EMAIL, shippingFields, type Language, type LookupGroup, type WinnerMatch } from "../../../supabase/functions/finger-king/finger";
+import { countryCodes, formatKst, PRIVACY_URL, SUPPORT_EMAIL, internationalMailNotice, taiwanShippingNotice, shippingFields, type Language, type LookupGroup, type WinnerMatch } from "../../../supabase/functions/finger-king/finger";
 import { shippingCopy, winnerCopy } from "./winner-copy";
 
 type Release = { groups: LookupGroup[] };
@@ -222,7 +222,7 @@ function DeliveryForm({ winner, language, onSuccess, previewCountry }: {
   winner: WinnerMatch; language: Language; onSuccess: () => void; previewCountry?: string;
 }) {
   const t = winnerCopy[language];
-  const [country, setCountry] = useState(previewCountry ?? (winner.territory === "kr" ? "KR" : ""));
+  const [country, setCountry] = useState(previewCountry ?? "");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const names = useMemo(() => {
@@ -230,12 +230,12 @@ function DeliveryForm({ winner, language, onSuccess, previewCountry }: {
     return countryCodes.map((code) => ({ code, label: name.of(code) ?? code })).sort((a, b) => a.label.localeCompare(b.label, language));
   }, [language]);
   const copy = shippingCopy[language];
-  const fields = shippingFields(country, winner.krImport, winner.twExpress);
+  const fields = shippingFields(country, winner.krImport);
   const postalPattern = fields.domestic ? "[0-9]{5}" : country === "JP" ? "[0-9]{3}-?[0-9]{4}" : undefined;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (previewCountry) return;
+    if (previewCountry || fields.suspended) return;
     const form = new FormData(event.currentTarget);
     setError("");
     setPending(true);
@@ -252,13 +252,13 @@ function DeliveryForm({ winner, language, onSuccess, previewCountry }: {
   return <form method="post" onSubmit={submit} className="delivery-form">
     <Field label={t.code}><input name="code" placeholder="XXXX-XXXX-XXXX-XXXX" maxLength={30} required autoComplete="off" aria-describedby="code-help" /></Field>
     <p className="field-hint" id="code-help">{t.codeHelp}</p>
-    {winner.territory === "kr" ? <input type="hidden" name="country" value="KR" /> :
-      <Field label={t.country}>
-        <select name="country" value={country} onChange={(event) => setCountry(event.target.value)} required autoComplete="shipping country">
+    <Field label={t.country}>
+        <select name="country" value={country} onChange={(event) => { setCountry(event.target.value); setError(""); }} required autoComplete="shipping country">
           <option value="">{t.chooseCountry}</option>{names.map(({ code, label }) => <option key={code} value={code}>{label}</option>)}
         </select>
-      </Field>}
-    {country && <div className="delivery-form" key={country}>
+      </Field>
+    {fields.suspended && <p className="form-error" role="alert">{copy.suspended} <a href={internationalMailNotice} target="_blank" rel="noreferrer">{copy.notice} ↗</a></p>}
+    {country && !fields.suspended && <div className="delivery-form" key={country}>
       <p className="field-hint">{fields.domestic ? copy.domestic : copy.international}</p>
       <div className="form-grid">
         <Field label={t.recipient}><input name="recipient" maxLength={100} required autoComplete="shipping name" /></Field>
@@ -281,17 +281,17 @@ function DeliveryForm({ winner, language, onSuccess, previewCountry }: {
           autoCapitalize="characters" spellCheck={false} aria-describedby="clearance-help" />
       </Field>}
       {fields.koreanClearance && <p className="field-hint" id="clearance-help">{copy.clearanceHelp}</p>}
-      {country === "TW" && <p className="field-hint">{copy.ezWayHelp} <a href="https://web.customs.gov.tw/en/singlehtml/1865?cntId=1ddad168f44a42eba6cab1d4c8983687" target="_blank" rel="noreferrer">EZ WAY ↗</a></p>}
+      {country === "TW" && <p className="field-hint">{copy.ezWayHelp} <a href={taiwanShippingNotice} target="_blank" rel="noreferrer">EZ WAY ↗</a></p>}
       {fields.taiwanEzWay && <label className="checkbox-row"><input type="checkbox" name="ezWay" required /><span>{copy.ezWay}</span></label>}
     </div>}
     <section className="privacy-notice" aria-labelledby="privacy-title">
       <h3 id="privacy-title">{t.privacy}</h3>
       <dl><dt>{t.purpose}</dt><dd>{t.purposeText}{fields.koreanClearance || fields.taiwanEzWay ? " · " + copy.purpose : ""}</dd><dt>{t.items}</dt><dd>{t.itemsText}{fields.koreanClearance ? ", " + copy.clearance : ""}{fields.taiwanEzWay ? ", " + copy.ezWayItem : ""}</dd>
-        <dt>{t.retention}</dt><dd>{formatKst(winner.purgeAt, language)}</dd></dl>
+        <dt>{t.retention}</dt><dd>{winner.purgeAt ? formatKst(winner.purgeAt, language) : copy.retention}</dd></dl>
       <p>{t.decline}</p>
     </section>
     <label className="checkbox-row"><input type="checkbox" key={country} name="consent" required /><span>{t.agree}</span></label>
-    <button className="primary-button" type="submit" disabled={Boolean(previewCountry) || pending || !country}>{pending ? t.sending : t.send}<span aria-hidden="true">→</span></button>
-    {error && <p className="form-error" role="alert">{error === "customs" ? copy.customsError : t.errors[error as keyof typeof t.errors] ?? t.errors.service}</p>}
+    <button className="primary-button" type="submit" disabled={Boolean(previewCountry) || pending || !country || fields.suspended}>{pending ? t.sending : t.send}<span aria-hidden="true">→</span></button>
+    {error && <p className="form-error" role="alert">{error === "shipping_unavailable" ? copy.suspended : error === "customs" ? copy.customsError : t.errors[error as keyof typeof t.errors] ?? t.errors.service}</p>}
   </form>;
 }

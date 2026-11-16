@@ -14,7 +14,7 @@ type JoinedWinner = Winner & {
   title: string;
   announce_at: number;
   close_at: number;
-  purge_at: number;
+  purge_at: number | null;
   territory: Territory;
   kr_import: number;
   tw_express: number;
@@ -205,7 +205,7 @@ async function lookup(request: Request, input: Input) {
   const status = claimStatus(row.submitted_at, row.shipped_at, row.close_at, now);
   const result: WinnerMatch = {
     round: row.title, prize: row.prize, closeAt: row.close_at, purgeAt: row.purge_at,
-    territory: row.territory, krImport: row.kr_import === 1, twExpress: row.tw_express === 1, status,
+    territory: "world", krImport: row.kr_import === 1, twExpress: true, status,
     ...(status === "open" ? { token: await claimToken(row.id, now) } : {}),
   };
   return { result };
@@ -213,12 +213,13 @@ async function lookup(request: Request, input: Input) {
 
 function parseDelivery(input: Input, round: JoinedWinner): Delivery {
   const country = clean(input.country, 2);
-  if (!countryCodes.includes(country) || (round.territory === "kr" && country !== "KR")) throw new ApiError("delivery");
+  if (!countryCodes.includes(country)) throw new ApiError("delivery");
+  const fields = shippingFields(country, round.kr_import === 1);
+  if (fields.suspended) throw new ApiError("shipping_unavailable");
   const recipient = clean(input.recipient, 100);
   const phone = clean(input.phone, 38);
   const digits = phone.replace(/\D/g, "");
   if (!/^\+?[\d ()-]+$/.test(phone) || digits.length < 7 || digits.length > 15) throw new ApiError("phone");
-  const fields = shippingFields(country, round.kr_import === 1, round.tw_express === 1);
   const postal = clean(input.postal ?? "", 22, true);
   if ((fields.postalRequired && !postal) || (fields.domestic && !/^\d{5}$/.test(postal)) ||
       (country === "JP" && !/^\d{3}-?\d{4}$/.test(postal))) throw new ApiError("postal");
@@ -255,9 +256,9 @@ async function submit(request: Request, input: Input) {
   const saved = await db().prepare(`
     UPDATE finger_king.winners SET delivery_box = ?, submitted_at = ? WHERE id = ? AND submitted_at IS NULL
       AND EXISTS (SELECT 1 FROM finger_king.rounds r WHERE r.id = winners.round_id AND r.close_at > ?
-        AND r.announce_at <= ? AND r.published_at IS NOT NULL AND r.paused_at IS NULL AND r.completed_at IS NULL)
+        AND r.announce_at <= ? AND r.published_at IS NOT NULL AND r.paused_at IS NULL AND r.completed_at IS NULL AND (r.purge_at IS NULL OR r.purge_at > ?))
     RETURNING submitted_at
-  `).bind(box, submittedAt, id, submittedAt, submittedAt).first<number>("submitted_at");
+  `).bind(box, submittedAt, id, submittedAt, submittedAt, submittedAt).first<number>("submitted_at");
   if (saved === null) throw new ApiError("changed", 409);
   return { submittedAt: saved };
 }
@@ -265,10 +266,12 @@ async function submit(request: Request, input: Input) {
 async function purgeExpired(now = Date.now()) {
   return db().prepare(`
     UPDATE finger_king.winners SET delivery_box = NULL, identity_box = NULL, account_key = id, match_key = id
-    WHERE (delivery_box IS NOT NULL OR identity_box IS NOT NULL) AND round_id IN (
-      SELECT id FROM finger_king.rounds WHERE published_at IS NOT NULL AND purge_at <= ?
+    WHERE (delivery_box IS NOT NULL OR identity_box IS NOT NULL) AND EXISTS (
+      SELECT 1 FROM finger_king.rounds r WHERE r.id = winners.round_id AND r.published_at IS NOT NULL
+      AND (r.purge_at <= ? OR (r.purge_at IS NULL AND winners.submitted_at IS NULL
+        AND (r.close_at <= ? OR r.completed_at IS NOT NULL)))
     )
-  `).bind(now).run();
+  `).bind(now, now).run();
 }
 
 async function loadRound(id: string) {
@@ -293,14 +296,14 @@ async function saveRound(input: Input) {
   if (typeof title !== "string" || !title.trim() || title.length > 100 || /[\x00-\x1f\x7f]/.test(title)) throw new ApiError("input");
   const announce = input.announce ? fromKstInput(clean(input.announce, 16)) : null;
   const close = input.close ? fromKstInput(clean(input.close, 16)) : null;
-  const purge = input.purge ? fromKstInput(clean(input.purge, 16)) : null;
-  const territory = input.territory === "kr" || input.territory === "world" ? input.territory : null;
-  const krImport = input.krImport === "on" ? 1 : 0;
-  const twExpress = territory === "world" && input.twExpress === "on" ? 1 : 0;
+  const purge = null;
+  const territory = "world";
+  const krImport = 0;
+  const twExpress = 1;
   const now = Date.now();
-  if ((input.announce && !announce) || (input.close && !close) || (input.purge && !purge)) throw new ApiError("date", 400, "일정을 한국 시간으로 정확히 입력해 주세요.");
-  if ((announce && close && announce >= close) || (close && purge && close >= purge)) {
-    throw new ApiError("date", 400, "발표 시각, 배송지 입력 마감, 개인정보 보유 기한을 시간 순서대로 설정해 주세요.");
+  if ((input.announce && !announce) || (input.close && !close)) throw new ApiError("date", 400, "일정을 한국 시간으로 정확히 입력해 주세요.");
+  if (announce && close && announce >= close) {
+    throw new ApiError("date", 400, "배송지 입력 마감을 발표 시각보다 뒤로 설정해 주세요.");
   }
   if (input.id) {
     const id = selectedId(input.id);
@@ -332,11 +335,11 @@ async function publishRound(input: Input) {
   const id = selectedId(input.id);
   const result = await db().prepare(`
     UPDATE finger_king.rounds SET published_at = ? WHERE id = ? AND published_at IS NULL
-      AND announce_at < close_at AND close_at > ? AND purge_at > close_at AND territory IS NOT NULL
+      AND announce_at < close_at AND close_at > ? AND (purge_at IS NULL OR purge_at > close_at)
       AND EXISTS (SELECT 1 FROM finger_king.winners WHERE round_id = rounds.id)
     RETURNING id
   `).bind(Date.now(), id, Date.now()).first<string>("id");
-  if (!result) throw new ApiError("publish", 409, "발표 시각, 배송지 입력 마감, 개인정보 보유 기한, 배송 범위와 당첨자 명단을 확인해 주세요.");
+  if (!result) throw new ApiError("publish", 409, "발표 시각, 배송지 입력 마감과 당첨자 명단을 확인해 주세요.");
   return { id };
 }
 
@@ -438,10 +441,22 @@ async function markShipped(input: Input) {
   const now = Date.now();
   const shipped = await db().prepare(`
     UPDATE finger_king.winners SET shipped_at = ? WHERE id = ? AND submitted_at IS NOT NULL
-      AND delivery_box IS NOT NULL AND EXISTS (SELECT 1 FROM finger_king.rounds WHERE id = winners.round_id AND purge_at > ?)
+      AND delivery_box IS NOT NULL AND EXISTS (SELECT 1 FROM finger_king.rounds WHERE id = winners.round_id AND (purge_at IS NULL OR purge_at > ?))
     RETURNING id
   `).bind(input.shipped ? now : null, id, now).first<string>("id");
   if (!shipped) throw new ApiError("expired", 409, "접수 건이 없거나 배송지 보유 기한이 지났습니다.");
+  return { id };
+}
+
+async function markDelivered(input: Input) {
+  const id = selectedId(input.id);
+  const delivered = await db().prepare(`
+    UPDATE finger_king.winners
+    SET delivery_box = NULL, identity_box = NULL, account_key = id, match_key = id
+    WHERE id = ? AND shipped_at IS NOT NULL AND delivery_box IS NOT NULL
+    RETURNING id
+  `).bind(id).first<string>("id");
+  if (!delivered) throw new ApiError("expired", 409, "파기할 배송 정보가 없습니다.");
   return { id };
 }
 
@@ -475,7 +490,7 @@ async function exportDelivery(input: Input) {
   const now = Date.now();
   const round = await loadRound(id);
   await purgeExpired(now);
-  if (!round.purge_at || round.purge_at <= now) throw new ApiError("expired", 409, "배송지 보유 기한이 지났거나 설정되지 않았습니다.");
+  if (round.purge_at !== null && round.purge_at <= now) throw new ApiError("expired", 409, "배송지 보유 기한이 지났습니다.");
   const data = await db().prepare(`
     SELECT id, prize, delivery_box, submitted_at, shipped_at FROM finger_king.winners
     WHERE round_id = ? AND delivery_box IS NOT NULL AND (? = 0 OR shipped_at IS NULL)
@@ -499,6 +514,7 @@ const adminActions: Record<string, (input: Input) => Promise<unknown>> = Object.
   "admin-import": importWinners,
   "admin-remove": removeWinner,
   "admin-ship": markShipped,
+  "admin-delivered": markDelivered,
   "admin-codes": exportCodes,
   "admin-export": exportDelivery,
 }));

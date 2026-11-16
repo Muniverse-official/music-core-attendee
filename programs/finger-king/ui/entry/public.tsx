@@ -10,7 +10,7 @@ const sample: WinnerMatch = {
   round: "아이돌 핑거왕 검수용 투표",
   prize: "경품 샘플",
   closeAt: Date.now() + 7 * day,
-  purgeAt: Date.now() + 30 * day,
+  purgeAt: null,
   territory: "world",
   krImport: query.get("import") === "1",
   twExpress: true,
