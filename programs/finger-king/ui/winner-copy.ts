@@ -8,7 +8,7 @@ const ko = {
   vote: "투표명", chooseVote: "투표를 선택해 주세요",
   account: "뮤니버스 가입 이메일", accountPlaceholder: "name@example.com", nickname: "뮤니버스 닉네임",
   check: "당첨 조회", checking: "조회 중", pending: "당첨자 발표 준비 중입니다.", scheduled: "발표 예정",
-  empty: "선택한 투표에서 당첨 내역을 찾을 수 없습니다.",
+  empty: "해당 이메일과 닉네임으로 당첨되지 않았습니다.",
   delivery: "경품 배송지 입력", openForm: "배송지 입력", deadline: "입력 마감",
   deliveryHelp: "경품을 수령하실 분의 정보를 입력해 주세요.",
   code: "배송 접수 확인 코드", codeHelp: "당첨 안내로 받은 코드를 입력해 주세요.",
