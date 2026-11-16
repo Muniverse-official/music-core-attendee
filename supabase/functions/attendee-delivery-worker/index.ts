@@ -1,7 +1,8 @@
+import { revealRows } from '../_shared/privacy.ts';
 const REV='20260909-delivery-v6-musiccore-v2-age';
 type O=Record<string,any>;
 function env(){const base=Deno.env.get('SUPABASE_URL'),key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');if(!base||!key)throw new Error('ENV');return{base,key};}
-async function req(path:string,init:RequestInit={}){const{base,key}=env(),h=new Headers(init.headers);h.set('apikey',key);h.set('authorization',`Bearer ${key}`);if(init.body)h.set('content-type','application/json');const r=await fetch(`${base}/rest/v1/${path}`,{...init,headers:h,signal:AbortSignal.timeout(8000)});if(!r.ok)throw new Error('DB_'+r.status);const t=await r.text();return t?JSON.parse(t):null;}
+async function req(path:string,init:RequestInit={}){const{base,key}=env(),h=new Headers(init.headers);h.set('apikey',key);h.set('authorization',`Bearer ${key}`);if(init.body)h.set('content-type','application/json');const r=await fetch(`${base}/rest/v1/${path}`,{...init,headers:h,signal:AbortSignal.timeout(8000)});if(!r.ok)throw new Error('DB_'+r.status);const t=await r.text();return t?await revealRows(JSON.parse(t)):null;}
 const rpc=(name:string,body:O)=>req('rpc/'+name,{method:'POST',body:JSON.stringify(body)});
 let cachedSecret='',secretAt=0;
 async function secret(){if(!cachedSecret||Date.now()-secretAt>60000){const rows=await req('attendee_internal_secrets?name=eq.delivery_worker&select=secret&limit=1');cachedSecret=rows?.[0]?.secret||'';secretAt=Date.now();}return cachedSecret;}

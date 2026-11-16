@@ -38,6 +38,8 @@ jobs:
         env:
           FANS_PICK_SOURCE: ${{ github.workspace }}/qa-peer-fans/app.js
         run: |
+          npm ci --ignore-scripts
+          npm run test:privacy
           node tools/qa-edge.mjs
           node tools/qa-reserve-edge.mjs
           node tools/qa-remediation.mjs

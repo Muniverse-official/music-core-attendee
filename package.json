@@ -1,0 +1,7 @@
+{
+  "name": "muniverse-attendee-security-tests",
+  "private": true,
+  "type": "module",
+  "scripts": { "test:privacy": "node tools/qa-privacy.mjs" },
+  "devDependencies": { "openpgp": "6.3.2" }
+}

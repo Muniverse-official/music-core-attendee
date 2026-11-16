@@ -1,3 +1,4 @@
+import { keyset } from '../_shared/privacy.ts';
 import postgres from "npm:postgres@3.4.7";
 import { ApiError, createService, type Database, type Statement } from "./service.ts";
 
@@ -70,8 +71,7 @@ Deno.serve(async (request) => {
   try {
     const run = async (query: Query) => {
       if (action.startsWith("admin-")) await requireAdmin(query, request);
-      const { rows } = await query("select secret from finger_king.configuration where singleton", []);
-      const secret = rows[0]?.secret;
+      const secret = (await keyset()).fingerSecret;
       if (typeof secret !== "string") throw new ApiError("service", 503);
       const service = createService(database(query), secret);
       if (action === "status") return service.releaseState();

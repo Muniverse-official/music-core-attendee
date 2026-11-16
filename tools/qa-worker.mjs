@@ -4,7 +4,7 @@ import {stripTypeScriptTypes} from 'node:module';
 const root=import.meta.dirname+'/..',results=[];
 const check=(name,pass,actual)=>results.push({name,pass,actual});
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{'content-type':'application/json'}});
-const code=name=>stripTypeScriptTypes(fs.readFileSync(root+'/supabase/functions/'+name+'/index.ts','utf8'),{mode:'transform'});
+const code=name=>stripTypeScriptTypes(fs.readFileSync(root+'/supabase/functions/'+name+'/index.ts','utf8').replace(/import \{ revealRows \} from '\.\.\/_shared\/privacy\.ts';\n/, 'const revealRows=async x=>x;\n'),{mode:'transform'});
 function runtime(source,fetch){let handler;const ctx=vm.createContext({Deno:{env:{get:k=>k==='SUPABASE_URL'?'https://db.invalid':k==='SUPABASE_SERVICE_ROLE_KEY'?'test-only-secret':null},serve:h=>handler=h},fetch,Headers,Request,Response,URL,AbortSignal,Date,performance,crypto,TextEncoder,TextDecoder,Uint8Array,Map,Set,setTimeout,clearTimeout});vm.runInContext(source,ctx);return handler;}
 const jobs=['music_core','fans_pick'].map((program,i)=>({id:i+1,program,round_id:'11111111-1111-4111-8111-111111111111',winner_id:'22222222-2222-4222-8222-222222222222',payload:{name:'QA'}}));
 async function worker(mode,authorized=true){

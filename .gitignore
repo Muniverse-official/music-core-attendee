@@ -3,3 +3,5 @@
 tools/qa-*-results.json
 qa-peer-fans/
 supabase/.temp/
+node_modules/
+tools/.privacy-qa-*/
