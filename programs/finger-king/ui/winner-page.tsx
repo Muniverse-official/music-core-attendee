@@ -172,7 +172,7 @@ export function WinnerPage({ admin, initialState, preview }: { admin: boolean; i
               {t.scheduled} {formatKst(selectedGroup.announceAt, language)}
             </p>}
             <div className="form-grid">
-              <Field label={t.account}><input name="account" value={account} placeholder={t.accountPlaceholder} required maxLength={150} autoComplete="off"
+              <Field label={t.account}><input name="account" type="email" value={account} placeholder={t.accountPlaceholder} required maxLength={254} autoComplete="email"
                 autoCapitalize="none" spellCheck={false} disabled={pending} onChange={(event) => { setAccount(event.target.value); clearResult(); }} /></Field>
               <Field label={t.nickname}><input name="nickname" value={nickname} required maxLength={100}
                 autoComplete="off" disabled={pending} onChange={(event) => { setNickname(event.target.value); clearResult(); }} /></Field>

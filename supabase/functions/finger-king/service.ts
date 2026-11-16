@@ -115,8 +115,10 @@ function clean(value: unknown, max: number, optional = false) {
   return result;
 }
 
-function normalizeAccount(value: string) {
-  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value) ? value.toLowerCase() : value;
+function accountEmail(value: unknown) {
+  const email = clean(value, 254);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new ApiError("input");
+  return email;
 }
 
 function selectedId(value: unknown) {
@@ -187,7 +189,7 @@ async function releaseState() {
 async function lookup(request: Request, input: Input) {
   const now = Date.now();
   const groupId = selectedId(input.groupId);
-  const account = normalizeAccount(clean(input.account, 150));
+  const account = accountEmail(input.account).toLowerCase();
   const nickname = clean(input.nickname, 100);
   const match = await matchingKey(account, nickname);
   await rateLimit(request, "lookup", now, 18, match);
@@ -382,12 +384,12 @@ async function importWinners(input: Input) {
   const rows = input.rows.map((raw, index) => {
     try {
       if (!Array.isArray(raw) || raw.length !== 3) throw new Error();
-      const account = clean(raw[0], 150);
+      const account = accountEmail(raw[0]);
       const nickname = clean(raw[1], 100);
       const prize = clean(raw[2], 120);
-      return { account, normalized: normalizeAccount(account), nickname, prize };
+      return { account, normalized: account.toLowerCase(), nickname, prize };
     } catch {
-      throw new ApiError("rows", 400, `명단 ${index + 1}번째 줄의 아이디, 닉네임, 경품명을 확인해 주세요.`);
+      throw new ApiError("rows", 400, `명단 ${index + 1}번째 줄의 뮤니버스 가입 이메일, 닉네임, 경품명을 확인해 주세요.`);
     }
   });
   const currentCount = await db().prepare("SELECT COUNT(*) AS total FROM finger_king.winners WHERE round_id = ?").bind(roundId).first<number>("total");
@@ -465,7 +467,7 @@ async function exportCodes(input: Input) {
     const [identity, code] = await Promise.all([reveal<string[]>(row.identity_box!, "identity:" + row.id), shippingCode(row.id)]);
     return [...identity, row.prize, code.match(/.{4}/g)!.join("-")];
   }));
-  return { csv: csv([["아이디", "닉네임", "경품명", "배송 접수 확인 코드"], ...rows]) };
+  return { csv: csv([["뮤니버스 가입 이메일", "닉네임", "경품명", "배송 접수 확인 코드"], ...rows]) };
 }
 
 async function exportDelivery(input: Input) {

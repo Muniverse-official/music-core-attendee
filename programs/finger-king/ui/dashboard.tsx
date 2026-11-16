@@ -274,14 +274,14 @@ function RosterImport({ busy, onImport, onError }: { busy: boolean; onImport: (r
   }
 
   return <section className="admin-panel">
-    <div className="section-heading"><div><h2>당첨자 등록</h2><p>아이디·닉네임·경품명 순서로 CSV를 올리거나 스프레드시트의 세 열을 붙여넣어 주세요.</p></div>
-      <button className="admin-quiet" type="button" onClick={() => csvDownload("idol-finger-king-winner-template.csv", "\ufeff아이디,닉네임,경품명\r\n")}>CSV 양식 ↓</button>
+    <div className="section-heading"><div><h2>당첨자 등록</h2><p>뮤니버스 가입 이메일·닉네임·경품명 순서로 CSV를 올리거나 스프레드시트의 세 열을 붙여넣어 주세요.</p></div>
+      <button className="admin-quiet" type="button" onClick={() => csvDownload("idol-finger-king-winner-template.csv", "\ufeff뮤니버스 가입 이메일,닉네임,경품명\r\n")}>CSV 양식 ↓</button>
     </div>
     <form className="admin-form" onSubmit={(event) => { event.preventDefault(); void onImport(raw).then((ok) => { if (ok) setRaw(""); }); }}>
       <input type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" aria-label="당첨자 CSV 파일" disabled={busy || fileBusy}
         onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; void readFile(file); }} />
       <label><span>등록할 명단</span><textarea value={raw} onChange={(event) => setRaw(event.target.value)} rows={4}
-        placeholder={"아이디,닉네임,경품명"} required spellCheck={false} /></label>
+        placeholder={"뮤니버스 가입 이메일,닉네임,경품명"} required spellCheck={false} /></label>
       <button type="submit" className="admin-strong" disabled={busy || fileBusy || !raw.trim()}>당첨자 등록</button>
     </form>
   </section>;
@@ -294,7 +294,7 @@ function WinnerTable({ winners, shipping, canRemove, busy, onRemove, onShip }: {
   if (!winners) return <p className="table-empty">명단을 불러오는 중입니다…</p>;
   if (!winners.length) return <p className="table-empty">{shipping ? "접수된 배송지가 없습니다." : "등록된 당첨자가 없습니다."}</p>;
   return <div className="table-frame" tabIndex={0}><table className="winner-table">
-    <thead><tr>{shipping && <th scope="col">접수번호</th>}<th scope="col">아이디</th><th scope="col">닉네임</th><th scope="col">경품명</th><th scope="col">상태</th>
+    <thead><tr>{shipping && <th scope="col">접수번호</th>}<th scope="col">뮤니버스 가입 이메일</th><th scope="col">닉네임</th><th scope="col">경품명</th><th scope="col">상태</th>
       {shipping && <th scope="col">접수 시각</th>}{(shipping || canRemove) && <th scope="col">관리</th>}</tr></thead>
     <tbody>{winners.map((winner) => <tr key={winner.id}>
       {shipping && <td>{receiptRef(winner.id)}</td>}<td>{winner.account || "파기됨"}</td><td>{winner.nickname || "—"}</td><td>{winner.prize}</td>

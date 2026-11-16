@@ -73,7 +73,7 @@ export function parseRoster(raw: string): string[][] {
   if (quoted) throw new ClientError("rows", "CSV의 닫는 따옴표가 빠졌습니다.");
   finishLine();
   const headers = result[0]?.map((part) => part.replaceAll(" ", "").toLowerCase());
-  if (headers?.length === 3 && ["아이디", "id", "account", "accountid"].includes(headers[0]) &&
+  if (headers?.length === 3 && ["뮤니버스가입이메일", "가입이메일", "이메일", "email", "muniverseemail", "아이디", "id", "account", "accountid"].includes(headers[0]) &&
     ["닉네임", "nickname"].includes(headers[1]) && ["경품", "경품명", "prize"].includes(headers[2])) result.shift();
   return result;
 }
