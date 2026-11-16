@@ -84,17 +84,6 @@ async function matchingKey(account: string, nickname: string) {
   return base64(await hash("match:" + JSON.stringify([account, nickname])));
 }
 
-async function shippingCode(winnerId: string) {
-  return Array.from((await hash("shipping-code:" + winnerId)).slice(0, 8), (byte) => byte.toString(16).padStart(2, "0")).join("").toUpperCase();
-}
-
-function equalCode(expected: string, received: string) {
-  if (expected.length !== received.length) return false;
-  let difference = 0;
-  for (let i = 0; i < expected.length; i++) difference |= expected.charCodeAt(i) ^ received.charCodeAt(i);
-  return difference === 0;
-}
-
 async function claimToken(id: string, now: number) {
   const payload = id + "." + (now + 30 * 60 * 1000);
   return payload + "." + base64(await hash("claim:" + payload));
@@ -247,8 +236,6 @@ async function submit(request: Request, input: Input) {
   `).bind(id, now, now).first<JoinedWinner>();
   if (!row || row.close_at <= now) throw new ApiError("closed", 409);
   if (row.submitted_at) throw new ApiError("duplicate", 409);
-  const code = clean(input.code, 30).replace(/[ -]/g, "").toUpperCase();
-  if (!equalCode(await shippingCode(id), code)) throw new ApiError("code");
   if (input.consent !== true) throw new ApiError("consent");
   const delivery = parseDelivery(input, row);
   const box = await seal({ ...delivery, consentVersion: 2 }, "delivery:" + id);
@@ -470,21 +457,6 @@ function csv(rows: unknown[][]) {
   return "\ufeff" + rows.map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
 
-async function exportCodes(input: Input) {
-  const id = selectedId(input.id);
-  await loadRound(id);
-  await purgeExpired();
-  const data = await db().prepare(`
-    SELECT id, prize, identity_box FROM finger_king.winners
-    WHERE round_id = ? AND identity_box IS NOT NULL AND submitted_at IS NULL ORDER BY registration_order
-  `).bind(id).all<Winner>();
-  const rows = await Promise.all(data.results.map(async (row) => {
-    const [identity, code] = await Promise.all([reveal<string[]>(row.identity_box!, "identity:" + row.id), shippingCode(row.id)]);
-    return [...identity, row.prize, code.match(/.{4}/g)!.join("-")];
-  }));
-  return { csv: csv([["뮤니버스 가입 이메일", "닉네임", "경품명", "배송 접수 확인 코드"], ...rows]) };
-}
-
 async function exportDelivery(input: Input) {
   const id = selectedId(input.id);
   const now = Date.now();
@@ -515,7 +487,6 @@ const adminActions: Record<string, (input: Input) => Promise<unknown>> = Object.
   "admin-remove": removeWinner,
   "admin-ship": markShipped,
   "admin-delivered": markDelivered,
-  "admin-codes": exportCodes,
   "admin-export": exportDelivery,
 }));
 return { readInput, releaseState, lookup, submit, adminActions };

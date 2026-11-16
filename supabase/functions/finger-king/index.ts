@@ -59,7 +59,7 @@ const headers = {
   "X-Robots-Tag": "noindex, nofollow",
 };
 const json = (value: unknown, status = 200) => Response.json(value, { status, headers });
-const readOnly = new Set(["status", "lookup", "admin-rounds", "admin-winners", "admin-codes", "admin-export"]);
+const readOnly = new Set(["status", "lookup", "admin-rounds", "admin-winners", "admin-export"]);
 
 Deno.serve(async (request) => {
   const action = new URL(request.url).searchParams.get("action") ?? "";

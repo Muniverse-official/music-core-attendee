@@ -250,8 +250,6 @@ function DeliveryForm({ winner, language, onSuccess, previewCountry }: {
   }
 
   return <form method="post" onSubmit={submit} className="delivery-form">
-    <Field label={t.code}><input name="code" placeholder="XXXX-XXXX-XXXX-XXXX" maxLength={30} required autoComplete="off" aria-describedby="code-help" /></Field>
-    <p className="field-hint" id="code-help">{t.codeHelp}</p>
     <Field label={t.country}>
         <select name="country" value={country} onChange={(event) => { setCountry(event.target.value); setError(""); }} required autoComplete="shipping country">
           <option value="">{t.chooseCountry}</option>{names.map(({ code, label }) => <option key={code} value={code}>{label}</option>)}

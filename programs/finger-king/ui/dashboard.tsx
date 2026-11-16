@@ -109,12 +109,11 @@ export function AdminDashboard() {
     });
   }
 
-  async function download(kind: "codes" | "all" | "waiting") {
+  async function download(kind: "all" | "waiting") {
     await work(async () => {
-      const isCodes = kind === "codes";
-      const data = await post<{ csv: string }>(isCodes ? "admin-codes" : "admin-export", { id: activeId, waiting: kind === "waiting" });
+      const data = await post<{ csv: string }>("admin-export", { id: activeId, waiting: kind === "waiting" });
       const roundName = (active?.title ?? "아이돌 핑거왕").replace(/[\\/:*?"<>|]/g, "_");
-      csvDownload(roundName + (isCodes ? "_배송접수확인코드.csv" : kind === "waiting" ? "_발송대기.csv" : "_배송지전체.csv"), data.csv);
+      csvDownload(roundName + (kind === "waiting" ? "_발송대기.csv" : "_배송지전체.csv"), data.csv);
       setNotice("CSV 다운로드를 시작했습니다.");
     });
   }
@@ -226,8 +225,7 @@ export function AdminDashboard() {
           {tab === "winners" && <>
             {!active.published_at && <RosterImport key={active.id} busy={busy} onImport={importRoster} onError={setError} />}
             <section className="admin-panel">
-              <div className="section-heading"><div><h2>당첨자 명단</h2><p>미접수 당첨자의 확인 코드를 내려받아 각 당첨자에게 개별 안내해 주세요.</p></div>
-                <button className="admin-outline" type="button" disabled={busy || !active.total || active.total === active.submitted || Boolean(active.published_at && active.purge_at && active.purge_at <= Date.now())} onClick={() => void download("codes")}>확인 코드 CSV ↓</button>
+              <div className="section-heading"><div><h2>당첨자 명단</h2><p>등록된 당첨자와 배송지 접수 상태를 확인할 수 있습니다.</p></div>
               </div>
               <WinnerTable winners={winners} canRemove={!active.published_at} busy={busy} onRemove={remove} />
             </section>
