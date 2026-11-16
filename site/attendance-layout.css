@@ -1,4 +1,14 @@
 html:has(> body.attendance-compact) { min-width: 0; }
+html:has(> body.attendance-compact[data-attendee-program="music_core"]) {
+  --page: #080d20;
+  color-scheme: dark;
+  background: var(--page);
+}
+
+body.attendance-compact[data-attendee-program="music_core"] {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
 
 .attendance-compact {
   --page: #080d20;
