@@ -12,7 +12,8 @@
   <link rel="stylesheet" href="./registration-v2.css">
   <link rel="stylesheet" href="./availability.css?v=20260908-qa9">
   <link rel="stylesheet" href="./mobile-iphone.css?v=20260908-iphone1">
-<link rel="stylesheet" href="./attendance-layout.css"></head>
+<link rel="stylesheet" href="./attendance-layout.css">
+<link rel="stylesheet" href="./account-guide.css?v=1"></head>
 <body class="attendance-compact" data-attendee-program="music_core">
   <main class="page-shell">
     <header class="topbar">
@@ -34,10 +35,10 @@
     <section class="panel verify-panel" id="step1">
       <div class="section-heading"><span class="number-badge pink">STEP 01</span><div><h2 id="verifyTitle">당첨자 확인</h2><p id="verifyDesc">당첨된 뮤니버스 계정의
 가입 이메일과 닉네임을 입력해 주세요.</p>
-      <p class="account-help" id="verifyAccountHelp">뮤니버스 로그인 후 마이페이지에서
-가입 이메일과 닉네임을 확인해 주세요.</p></div></div>
+      </div></div>
       <div class="verify-layout">
         <div class="form-side">
+          <div class="lookup-help"><p class="lookup-help-title" id="accountHelpTitle">계정 정보 확인 방법</p><p class="lookup-help-steps"><span id="accountHelpSignIn">뮤니버스 앱·웹 로그인</span><span class="lookup-help-follow"><span class="lookup-help-arrow" aria-hidden="true">→</span><span id="accountHelpMyPage">마이페이지에서 확인</span></span></p></div>
           <div class="field"><label for="email" id="emailLabel">Muniverse 가입 이메일</label><div class="input-wrap"><span aria-hidden="true">✉</span><input id="email" type="email" maxlength="254" autocomplete="email" inputmode="email" placeholder="name@example.com"></div></div>
           <div class="field"><label for="nickname" id="nicknameLabel">뮤니버스 닉네임</label><div class="input-wrap"><input id="nickname" maxlength="80" autocomplete="off"></div></div>
           <div class="honeypot" aria-hidden="true"><label for="website">Website</label><input id="website" tabindex="-1" autocomplete="off"></div>
@@ -78,10 +79,10 @@
     <section class="panel hidden already-panel" id="already" aria-live="polite"><strong id="alreadyMessage">이미 방청자 정보 등록이 완료되었습니다.</strong><p id="alreadyReserveNote" class="hidden"></p><p id="alreadyHelp">등록 정보 수정이 필요한 경우 support@muniverse.io로 문의해 주세요.</p></section>
     <footer><a href="mailto:support@muniverse.io">support@muniverse.io</a><small>© Muniverse. All rights reserved.</small></footer>
   </main>
-  <script src="./i18n.js?v=20261115-consent" defer></script>
+  <script src="./i18n.js?v=20261116-guide" defer></script>
   <script src="./availability.js?v=20260908-qa9" defer></script>
   <script src="./backend-router.js?v=20260908-qa9" defer></script>
-  <script src="./app.js?v=20261115-consent" defer></script>
+  <script src="./app.js?v=20261116-guide" defer></script>
   <script src="./title-copy.js?v=20260914-reserve2" defer></script>
   <script src="./phone.js" defer></script>
   <script src="./x-account.js?v=20261115-x-copy" defer></script>

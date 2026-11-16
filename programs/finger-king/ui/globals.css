@@ -36,7 +36,7 @@ img { display: block; max-width: 100%; }
 .brand { display: inline-block; flex: none; }
 .brand img { width: 163px; height: auto; }
 .language-switch { min-height: 42px; max-width: 100%; padding-inline: 9px; color: #f8f9ff; background: #121b34; border: 1px solid #303954; border-radius: 8px; font-size: 13px; font-weight: 690; }
-[lang="ko"] :where(.card-intro, .account-help, .status-line, .form-error, .privacy-notice, .success-pane p) {
+[lang="ko"] :where(.card-intro, .status-line, .form-error, .privacy-notice, .success-pane p) {
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
@@ -73,7 +73,6 @@ img { display: block; max-width: 100%; }
   text-wrap: balance;
   letter-spacing: -.015em;
 }
-.lookup-card .account-help { margin-top: 7px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .status-line { color: #ffda84; font-size: 12px; font-weight: 640; line-height: 1.45; margin-top: -5px; }
 .lookup-form { display: grid; gap: 14px; margin-top: 16px; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
@@ -258,3 +257,11 @@ img { display: block; max-width: 100%; }
   .admin-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
   .settings-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Match the ENHYPEN lookup guide. */
+.lookup-help { display: grid; gap: .28rem; margin: .7rem 0 0; padding: .65rem .8rem .72rem; border-left: 2px solid #ae8060; border-radius: .15rem .4rem .4rem .15rem; background: #241c17; text-align: left; }
+.lookup-help-title { margin: 0; color: #f2c9a5; font-size: .76rem; font-weight: 750; line-height: 1.45; }
+.lookup-help-steps { display: flex; align-items: baseline; flex-wrap: wrap; gap: .16rem .52rem; margin: 0; color: #f0e5dd; font-size: .86rem; line-height: 1.5; }
+.lookup-help-follow { display: inline-flex; align-items: baseline; gap: .52rem; }
+.lookup-help-steps span { word-break: keep-all; overflow-wrap: anywhere; }
+.lookup-help-arrow { color: #d9aa86; }

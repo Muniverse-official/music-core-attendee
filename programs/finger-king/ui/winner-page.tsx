@@ -155,7 +155,13 @@ export function WinnerPage({ admin, initialState, preview }: { admin: boolean; i
         </div> : <>
           <h2 id="lookup-title">{t.lookup}</h2>
           <p className="card-intro lookup-intro">{t.lookupHelp}</p>
-          <p className="account-help">{t.accountHelp}</p>
+          <div className="lookup-help">
+            <p className="lookup-help-title">{t.accountHelp.title}</p>
+            <p className="lookup-help-steps">
+              <span>{t.accountHelp.signIn}</span>
+              <span className="lookup-help-follow"><span className="lookup-help-arrow" aria-hidden="true">→</span><span>{t.accountHelp.myPage}</span></span>
+            </p>
+          </div>
           <form className="lookup-form" onSubmit={lookup}>
             <Field label={t.vote}>
               <select name="groupId" value={groupId} required disabled={pending || !groups?.length} onChange={(event) => {
