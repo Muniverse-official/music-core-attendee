@@ -262,6 +262,12 @@ function DeliveryForm({ winner, language, onSuccess, previewCountry }: {
         <Field label={t.recipient}><input name="recipient" maxLength={100} required autoComplete="shipping name" /></Field>
         <Field label={t.phone}><input name="phone" type="tel" placeholder={fields.domestic ? "010-0000-0000" : "+00 0000 0000"} maxLength={38} required autoComplete="shipping tel" /></Field>
       </div>
+      <Field label={t.contactEmail}><input name="contactEmail" type="email" placeholder="name@example.com" maxLength={254} required autoComplete="shipping email"
+        autoCapitalize="none" spellCheck={false} aria-describedby="contact-email-help" /></Field>
+      <p className="field-hint" id="contact-email-help">{t.contactEmailHelp}</p>
+      <Field label={t.xAccount} optional={t.optional}><input name="xAccount" placeholder="@username" maxLength={16} pattern="@?[A-Za-z0-9_]{1,15}" autoComplete="off"
+        autoCapitalize="none" spellCheck={false} aria-describedby="x-account-help" /></Field>
+      <p className="field-hint" id="x-account-help">{t.xAccountHelp}</p>
       {!fields.domestic && <div className="form-grid">
         <Field label={country === "JP" ? copy.prefecture : country === "TW" ? copy.county : t.region} optional={fields.regionRequired ? undefined : t.optional}>
           <input name="region" maxLength={110} required={fields.regionRequired} autoComplete="shipping address-level1" />

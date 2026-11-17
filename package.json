@@ -2,6 +2,12 @@
   "name": "muniverse-attendee-security-tests",
   "private": true,
   "type": "module",
-  "scripts": { "test:privacy": "node tools/qa-privacy.mjs" },
-  "devDependencies": { "openpgp": "6.3.2" }
+  "scripts": {
+    "test:privacy": "node tools/qa-privacy.mjs",
+    "test:finger-contact": "node --experimental-transform-types tools/qa-finger-contact.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.16",
+    "openpgp": "6.3.2"
+  }
 }

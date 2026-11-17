@@ -40,6 +40,8 @@ export type AdminWinner = {
   submittedAt: number | null;
   shippedAt: number | null;
   hasDelivery: boolean;
+  contactEmail: string;
+  xAccount: string;
 };
 
 const KR_OFFSET = 9 * 60 * 60 * 1000;
@@ -101,6 +103,9 @@ export function shippingFields(country: string, krImport: boolean) {
 export type Delivery = {
   recipient: string;
   phone: string;
+  // Optional in stored records created before contact fields were introduced.
+  contactEmail?: string;
+  xAccount?: string;
   country: string;
   postal: string;
   region: string;

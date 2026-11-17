@@ -209,6 +209,14 @@ function parseDelivery(input: Input, round: JoinedWinner): Delivery {
   const phone = clean(input.phone, 38);
   const digits = phone.replace(/\D/g, "");
   if (!/^\+?[\d ()-]+$/.test(phone) || digits.length < 7 || digits.length > 15) throw new ApiError("phone");
+  let contactEmail: string;
+  try { contactEmail = accountEmail(input.contactEmail); }
+  catch { throw new ApiError("contact_email"); }
+  let xAccount: string;
+  try { xAccount = clean(input.xAccount ?? "", 16, true); }
+  catch { throw new ApiError("x_account"); }
+  if (xAccount && !/^@?[A-Za-z0-9_]{1,15}$/.test(xAccount)) throw new ApiError("x_account");
+  xAccount = xAccount.replace(/^@/, "");
   const postal = clean(input.postal ?? "", 22, true);
   if ((fields.postalRequired && !postal) || (fields.domestic && !/^\d{5}$/.test(postal)) ||
       (country === "JP" && !/^\d{3}-?\d{4}$/.test(postal))) throw new ApiError("postal");
@@ -217,7 +225,7 @@ function parseDelivery(input: Input, round: JoinedWinner): Delivery {
       (fields.taiwanEzWay && input.ezWay !== "on")) throw new ApiError("customs");
   if (postal && !/^[\p{L}\p{N} -]+$/u.test(postal)) throw new ApiError("postal");
   return {
-    country, recipient, phone, postal,
+    country, recipient, phone, contactEmail, xAccount: xAccount ? "@" + xAccount : "", postal,
     region: fields.domestic ? "" : clean(input.region ?? "", 110, !fields.regionRequired),
     city: country === "KR" ? "" : clean(input.city, 110),
     address1: clean(input.address1, 200),
@@ -238,7 +246,7 @@ async function submit(request: Request, input: Input) {
   if (row.submitted_at) throw new ApiError("duplicate", 409);
   if (input.consent !== true) throw new ApiError("consent");
   const delivery = parseDelivery(input, row);
-  const box = await seal({ ...delivery, consentVersion: 2 }, "delivery:" + id);
+  const box = await seal({ ...delivery, consentVersion: 3 }, "delivery:" + id);
   const submittedAt = Date.now();
   const saved = await db().prepare(`
     UPDATE finger_king.winners SET delivery_box = ?, submitted_at = ? WHERE id = ? AND submitted_at IS NULL
@@ -354,12 +362,13 @@ async function listWinners(input: Input) {
   await loadRound(id);
   await purgeExpired();
   const data = await db().prepare(`
-    SELECT id, prize, identity_box, submitted_at, shipped_at, delivery_box IS NOT NULL AS has_delivery
+    SELECT id, prize, identity_box, delivery_box, submitted_at, shipped_at, delivery_box IS NOT NULL AS has_delivery
     FROM finger_king.winners WHERE round_id = ? ORDER BY submitted_at DESC NULLS LAST, registration_order LIMIT 1000
   `).bind(id).all<Winner & { has_delivery: number }>();
   const winners: AdminWinner[] = await Promise.all(data.results.map(async (row) => {
     const [account, nickname] = row.identity_box ? await reveal<string[]>(row.identity_box, "identity:" + row.id) : ["", ""];
-    return { id: row.id, prize: row.prize, account, nickname, submittedAt: row.submitted_at, shippedAt: row.shipped_at, hasDelivery: Boolean(row.has_delivery) };
+    const delivery = row.delivery_box ? await reveal<Delivery>(row.delivery_box, "delivery:" + row.id) : null;
+    return { id: row.id, prize: row.prize, account, nickname, submittedAt: row.submitted_at, shippedAt: row.shipped_at, hasDelivery: Boolean(row.has_delivery), contactEmail: delivery?.contactEmail ?? "", xAccount: delivery?.xAccount ?? "" };
   }));
   return { winners };
 }
@@ -471,9 +480,9 @@ async function exportDelivery(input: Input) {
   const rows = await Promise.all(data.results.map(async (row) => {
     const d = await reveal<Delivery>(row.delivery_box!, "delivery:" + row.id);
     return [receiptRef(row.id), row.prize, d.recipient, d.phone, d.country, d.postal, d.region, d.city, d.address1, d.address2,
-      formatKst(row.submitted_at!), row.shipped_at ? formatKst(row.shipped_at) : "", d.clearanceCode, d.ezWayConfirmed ? "확인" : ""];
+      formatKst(row.submitted_at!), row.shipped_at ? formatKst(row.shipped_at) : "", d.clearanceCode, d.ezWayConfirmed ? "확인" : "", d.contactEmail, d.xAccount];
   }));
-  return { csv: csv([["접수번호", "경품명", "수령인", "연락처", "국가코드", "우편번호", "주·도", "도시", "기본주소", "상세주소", "접수 시각", "발송 시각", "개인통관고유부호", "EZ WAY 준비 확인"], ...rows]) };
+  return { csv: csv([["접수번호", "경품명", "수령인", "연락처", "국가코드", "우편번호", "주·도", "도시", "기본주소", "상세주소", "접수 시각", "발송 시각", "개인통관고유부호", "EZ WAY 준비 확인", "연락 가능한 이메일", "X(트위터) 계정"], ...rows]) };
 }
 
 const adminActions: Record<string, (input: Input) => Promise<unknown>> = Object.freeze(Object.assign(Object.create(null), {

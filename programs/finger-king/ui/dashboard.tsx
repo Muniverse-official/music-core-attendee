@@ -297,12 +297,12 @@ function WinnerTable({ winners, shipping, canRemove, busy, onRemove, onShip, onD
   if (!winners.length) return <p className="table-empty">{shipping ? "접수된 배송지가 없습니다." : "등록된 당첨자가 없습니다."}</p>;
   return <div className="table-frame" tabIndex={0}><table className="winner-table">
     <thead><tr>{shipping && <th scope="col">접수번호</th>}<th scope="col">뮤니버스 가입 이메일</th><th scope="col">닉네임</th><th scope="col">경품명</th><th scope="col">상태</th>
-      {shipping && <th scope="col">접수 시각</th>}{(shipping || canRemove) && <th scope="col">관리</th>}</tr></thead>
+      {shipping && <><th scope="col">연락 가능한 이메일</th><th scope="col">X(트위터) 계정</th><th scope="col">접수 시각</th></>}{(shipping || canRemove) && <th scope="col">관리</th>}</tr></thead>
     <tbody>{winners.map((winner) => <tr key={winner.id}>
       {shipping && <td>{receiptRef(winner.id)}</td>}<td>{winner.account || "파기됨"}</td><td>{winner.nickname || "—"}</td><td>{winner.prize}</td>
       <td><span className={"row-status" + (winner.shippedAt ? " shipped" : winner.submittedAt ? " received" : "")}>
         {winner.shippedAt ? (winner.hasDelivery ? "발송 완료" : "발송 완료 · 개인정보 파기") : winner.submittedAt ? (winner.hasDelivery ? "배송지 접수" : "보유 기한 만료") : "미접수"}</span></td>
-      {shipping && <td>{winner.submittedAt && formatKst(winner.submittedAt)}</td>}
+      {shipping && <><td>{winner.contactEmail || "—"}</td><td>{winner.xAccount || "—"}</td><td>{winner.submittedAt && formatKst(winner.submittedAt)}</td></>}
       {shipping && <td><button className="admin-quiet" disabled={busy || !winner.hasDelivery} onClick={() => onShip?.(winner)}>
         {winner.shippedAt ? "발송 대기로 변경" : "발송 완료 처리"}</button>{winner.shippedAt && winner.hasDelivery && <button type="button" className="admin-quiet" disabled={busy} onClick={() => onDelivered?.(winner)}>배송 완료 · 개인정보 파기</button>}</td>}
       {canRemove && <td><button className="admin-quiet remove" disabled={busy} onClick={() => onRemove?.(winner)}>삭제</button></td>}
