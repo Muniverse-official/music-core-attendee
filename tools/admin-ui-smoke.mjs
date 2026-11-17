@@ -21,6 +21,14 @@ const payload={
   fans_pick:{active_round_id:fans1.id,rounds:[fans1,fans2],winners:[]}
 };
 
+// Keep the fake session inside mocked services, including the optional admin tab.
+await page.route('https://kkaoerbblpuszptiibvo.supabase.co/**',route=>route.abort());
+await page.route('**/functions/v1/attendee-private-test',async route=>{
+  const headers={'access-control-allow-origin':host,'access-control-allow-headers':'content-type,authorization,x-admin-request','access-control-allow-methods':'POST,OPTIONS'};
+  if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers});
+  assert.equal(route.request().postDataJSON().action,'state');
+  return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify({ok:true,title:'3. ENHYPEN',open:false,winners:[]})});
+});
 await page.route('**/functions/v1/attendee-admin',async route=>{
   if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers:{'access-control-allow-origin':host}});
   const body=route.request().postDataJSON();
@@ -35,14 +43,14 @@ try{
   await page.click('#loginButton');
   await page.locator('#dashboard').waitFor({state:'visible',timeout:10000});
   await page.waitForFunction(()=>document.body.getAttribute('aria-busy')==='false',{timeout:10000});
-  await page.waitForTimeout(300);
+  await page.waitForFunction(()=>document.querySelector('#selectedRoundTitle')?.textContent==='964회차'&&document.querySelectorAll('#roundList .round-item strong').length===2);
 
   assert.equal(await page.locator('#selectedRoundTitle').textContent(),'964회차');
   assert.deepEqual(await page.locator('#roundList .round-item strong').allTextContents(),['964회차','963회차']);
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.roundOrder),'latest-first-safe');
 
   await page.click('[data-program="fans_pick"]');
-  await page.waitForTimeout(300);
+  await page.waitForFunction(()=>document.querySelector('#selectedRoundTitle')?.textContent==='2회차'&&document.querySelectorAll('#roundList .round-item strong').length===2);
   assert.equal(await page.locator('#selectedRoundTitle').textContent(),'2회차');
   assert.deepEqual(await page.locator('#roundList .round-item strong').allTextContents(),['2회차','1회차']);
   assert.deepEqual(errors,[]);
