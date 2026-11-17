@@ -84,7 +84,16 @@ try {
   const child = page.frames().find(frame => frame.url().endsWith('/finger-king/admin.html'));
   assert(child);
   assert.equal(await child.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  assert.equal(await child.locator('.table-frame').evaluate(element => element.scrollWidth > element.clientWidth), true);
+  assert.equal(await child.locator('.winner-table').evaluate(element => element.getBoundingClientRect().width >= 1120), true);
   await page.screenshot({ path: path.join(base, 'qa-screenshots/finger-admin-simple-mobile.png'), fullPage: true });
+  const mobileDelete = frame.locator('tbody tr').filter({ hasText: '미제출 테스트' }).getByRole('button', { name: '개인정보 삭제', exact: true });
+  await mobileDelete.scrollIntoViewIfNeeded();
+  assert.equal(await mobileDelete.evaluate(element => {
+    const rect = element.getBoundingClientRect();
+    return rect.left >= 0 && rect.right <= innerWidth;
+  }), true);
+  await page.screenshot({ path: path.join(base, 'qa-screenshots/finger-admin-simple-mobile-actions.png'), fullPage: true });
   assert.deepEqual(errors, []);
   console.log('PASS simplified admin, no shipping controls, CSV retained, cancel/confirm scoped deletion, deleted state and mobile layout');
 } finally { await browser.close(); }

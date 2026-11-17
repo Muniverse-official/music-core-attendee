@@ -227,10 +227,11 @@ img { display: block; max-width: 100%; }
 .admin-message.error { color: #8c332e; background: #fce9e6; border-color: #eecac4; }
 .download-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .table-frame { overflow-x: auto; width: 100%; }
-.winner-table { border-collapse: collapse; font-size: 13px; width: 100%; text-align: left; }
-.winner-table th { background: #f1f4fb; color: #405273; }
+.winner-table { border-collapse: collapse; font-size: 13px; width: 100%; min-width: 1120px; text-align: left; }
+.winner-table th { background: #f1f4fb; color: #405273; white-space: nowrap; }
 .winner-table td, .winner-table th { padding: 8px 9px; border-bottom: 1px solid #e1e6ef; overflow-wrap: anywhere; vertical-align: middle; }
-.winner-table td:last-child { min-width: 70px; }
+.winner-table td:last-child { min-width: 110px; }
+.winner-table td:first-child, .winner-table td:nth-last-child(2), .winner-table button { white-space: nowrap; }
 .table-empty { padding: 21px 10px; text-align: center; color: #546681; background: #f7f9fd; border-radius: 6px; font-size: 13px; }
 .admin-access { padding: 28px; }
 .admin-access .brand { display: inline-flex; background: #0d1530; padding: 9px 12px; border-radius: 7px; }
