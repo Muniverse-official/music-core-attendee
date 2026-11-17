@@ -19,7 +19,7 @@ export type Round = {
   paused_at: number | null;
   created_at: number;
 };
-export type RoundSummary = Round & { total: number; submitted: number; shipped: number; phase: RoundPhase };
+export type RoundSummary = Round & { total: number; submitted: number; phase: RoundPhase };
 export type LookupGroup = { id: string; name: string; announceAt: number; closeAt: number };
 export type WinnerMatch = {
   round: string;
@@ -38,8 +38,8 @@ export type AdminWinner = {
   nickname: string;
   prize: string;
   submittedAt: number | null;
-  shippedAt: number | null;
   hasDelivery: boolean;
+  hasPersonalData: boolean;
   contactEmail: string;
   xAccount: string;
 };

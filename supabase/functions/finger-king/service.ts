@@ -240,7 +240,7 @@ async function submit(request: Request, input: Input) {
   const id = await tokenId(clean(input.token, 130));
   await rateLimit(request, "submit", now, 8, id);
   const row = await db().prepare(winnerJoin + `
-    WHERE w.id = ? AND ${visibleRound} AND r.announce_at <= ?
+    WHERE w.id = ? AND w.identity_box IS NOT NULL AND ${visibleRound} AND r.announce_at <= ?
   `).bind(id, now, now).first<JoinedWinner>();
   if (!row || row.close_at <= now) throw new ApiError("closed", 409);
   if (row.submitted_at) throw new ApiError("duplicate", 409);
@@ -249,7 +249,7 @@ async function submit(request: Request, input: Input) {
   const box = await seal({ ...delivery, consentVersion: 3 }, "delivery:" + id);
   const submittedAt = Date.now();
   const saved = await db().prepare(`
-    UPDATE finger_king.winners SET delivery_box = ?, submitted_at = ? WHERE id = ? AND submitted_at IS NULL
+    UPDATE finger_king.winners SET delivery_box = ?, submitted_at = ? WHERE id = ? AND submitted_at IS NULL AND identity_box IS NOT NULL
       AND EXISTS (SELECT 1 FROM finger_king.rounds r WHERE r.id = winners.round_id AND r.close_at > ?
         AND r.announce_at <= ? AND r.published_at IS NOT NULL AND r.paused_at IS NULL AND r.completed_at IS NULL AND (r.purge_at IS NULL OR r.purge_at > ?))
     RETURNING submitted_at
@@ -279,10 +279,10 @@ async function listRounds() {
   const now = Date.now();
   await purgeExpired(now);
   const rows = await db().prepare(`
-    SELECT r.*, COUNT(w.id) AS total, COUNT(w.submitted_at) AS submitted, COUNT(w.shipped_at) AS shipped
+    SELECT r.*, COUNT(w.id) AS total, COUNT(w.submitted_at) AS submitted
     FROM finger_king.rounds r LEFT JOIN finger_king.winners w ON w.round_id = r.id GROUP BY r.id
     ORDER BY r.created_at DESC
-  `).all<Round & { total: number; submitted: number; shipped: number }>();
+  `).all<Round & { total: number; submitted: number }>();
   return { rounds: rows.results.map((row) => ({ ...row, phase: roundPhase(row, now) })) };
 }
 
@@ -362,13 +362,13 @@ async function listWinners(input: Input) {
   await loadRound(id);
   await purgeExpired();
   const data = await db().prepare(`
-    SELECT id, prize, identity_box, delivery_box, submitted_at, shipped_at, delivery_box IS NOT NULL AS has_delivery
+    SELECT id, prize, identity_box, delivery_box, submitted_at, delivery_box IS NOT NULL AS has_delivery
     FROM finger_king.winners WHERE round_id = ? ORDER BY submitted_at DESC NULLS LAST, registration_order LIMIT 1000
   `).bind(id).all<Winner & { has_delivery: number }>();
   const winners: AdminWinner[] = await Promise.all(data.results.map(async (row) => {
     const [account, nickname] = row.identity_box ? await reveal<string[]>(row.identity_box, "identity:" + row.id) : ["", ""];
     const delivery = row.delivery_box ? await reveal<Delivery>(row.delivery_box, "delivery:" + row.id) : null;
-    return { id: row.id, prize: row.prize, account, nickname, submittedAt: row.submitted_at, shippedAt: row.shipped_at, hasDelivery: Boolean(row.has_delivery), contactEmail: delivery?.contactEmail ?? "", xAccount: delivery?.xAccount ?? "" };
+    return { id: row.id, prize: row.prize, account, nickname, submittedAt: row.submitted_at, hasDelivery: Boolean(row.has_delivery), hasPersonalData: Boolean(row.identity_box || row.delivery_box), contactEmail: delivery?.contactEmail ?? "", xAccount: delivery?.xAccount ?? "" };
   }));
   return { winners };
 }
@@ -431,28 +431,16 @@ async function removeWinner(input: Input) {
   return { id };
 }
 
-async function markShipped(input: Input) {
+async function deletePersonalData(input: Input) {
   const id = selectedId(input.id);
-  if (typeof input.shipped !== "boolean") throw new ApiError("input");
-  const now = Date.now();
-  const shipped = await db().prepare(`
-    UPDATE finger_king.winners SET shipped_at = ? WHERE id = ? AND submitted_at IS NOT NULL
-      AND delivery_box IS NOT NULL AND EXISTS (SELECT 1 FROM finger_king.rounds WHERE id = winners.round_id AND (purge_at IS NULL OR purge_at > ?))
-    RETURNING id
-  `).bind(input.shipped ? now : null, id, now).first<string>("id");
-  if (!shipped) throw new ApiError("expired", 409, "접수 건이 없거나 배송지 보유 기한이 지났습니다.");
-  return { id };
-}
-
-async function markDelivered(input: Input) {
-  const id = selectedId(input.id);
-  const delivered = await db().prepare(`
+  if (input.confirm !== true) throw new ApiError("confirm", 400, "개인정보 삭제 대상을 확인해 주세요.");
+  const deleted = await db().prepare(`
     UPDATE finger_king.winners
     SET delivery_box = NULL, identity_box = NULL, account_key = id, match_key = id
-    WHERE id = ? AND shipped_at IS NOT NULL AND delivery_box IS NOT NULL
+    WHERE id = ? AND (identity_box IS NOT NULL OR delivery_box IS NOT NULL)
     RETURNING id
   `).bind(id).first<string>("id");
-  if (!delivered) throw new ApiError("expired", 409, "파기할 배송 정보가 없습니다.");
+  if (!deleted) throw new ApiError("expired", 409, "삭제할 개인정보가 없거나 이미 삭제되었습니다.");
   return { id };
 }
 
@@ -473,16 +461,16 @@ async function exportDelivery(input: Input) {
   await purgeExpired(now);
   if (round.purge_at !== null && round.purge_at <= now) throw new ApiError("expired", 409, "배송지 보유 기한이 지났습니다.");
   const data = await db().prepare(`
-    SELECT id, prize, delivery_box, submitted_at, shipped_at FROM finger_king.winners
-    WHERE round_id = ? AND delivery_box IS NOT NULL AND (? = 0 OR shipped_at IS NULL)
+    SELECT id, prize, delivery_box, submitted_at FROM finger_king.winners
+    WHERE round_id = ? AND delivery_box IS NOT NULL
     ORDER BY submitted_at
-  `).bind(id, input.waiting === true ? 1 : 0).all<Winner>();
+  `).bind(id).all<Winner>();
   const rows = await Promise.all(data.results.map(async (row) => {
     const d = await reveal<Delivery>(row.delivery_box!, "delivery:" + row.id);
     return [receiptRef(row.id), row.prize, d.recipient, d.phone, d.country, d.postal, d.region, d.city, d.address1, d.address2,
-      formatKst(row.submitted_at!), row.shipped_at ? formatKst(row.shipped_at) : "", d.clearanceCode, d.ezWayConfirmed ? "확인" : "", d.contactEmail, d.xAccount];
+      formatKst(row.submitted_at!), d.clearanceCode, d.ezWayConfirmed ? "확인" : "", d.contactEmail, d.xAccount];
   }));
-  return { csv: csv([["접수번호", "경품명", "수령인", "연락처", "국가코드", "우편번호", "주·도", "도시", "기본주소", "상세주소", "접수 시각", "발송 시각", "개인통관고유부호", "EZ WAY 준비 확인", "연락 가능한 이메일", "X(트위터) 계정"], ...rows]) };
+  return { csv: csv([["접수번호", "경품명", "수령인", "연락처", "국가코드", "우편번호", "주·도", "도시", "기본주소", "상세주소", "접수 시각", "개인통관고유부호", "EZ WAY 준비 확인", "연락 가능한 이메일", "X(트위터) 계정"], ...rows]) };
 }
 
 const adminActions: Record<string, (input: Input) => Promise<unknown>> = Object.freeze(Object.assign(Object.create(null), {
@@ -494,8 +482,7 @@ const adminActions: Record<string, (input: Input) => Promise<unknown>> = Object.
   "admin-winners": listWinners,
   "admin-import": importWinners,
   "admin-remove": removeWinner,
-  "admin-ship": markShipped,
-  "admin-delivered": markDelivered,
+  "admin-delete-personal-data": deletePersonalData,
   "admin-export": exportDelivery,
 }));
 return { readInput, releaseState, lookup, submit, adminActions };

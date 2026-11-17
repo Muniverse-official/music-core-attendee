@@ -5,12 +5,11 @@ import { Brand } from "./winner-page";
 import { ClientError, csvDownload, parseRoster, post } from "./finger-client";
 import { formatKst, receiptRef, toKstInput, type AdminWinner, type RoundPhase, type RoundSummary } from "../../../supabase/functions/finger-king/finger";
 
-type Tab = "settings" | "winners" | "shipping";
+type Tab = "settings" | "winners";
 const phaseText: Record<RoundPhase, string> = { draft: "준비 중", scheduled: "발표 예약", open: "접수 중", closed: "입력 마감", paused: "일시 중지", completed: "발표 종료" };
 const tabs: { key: Tab; label: string }[] = [
   { key: "winners", label: "당첨자 명단" },
   { key: "settings", label: "발표·접수 설정" },
-  { key: "shipping", label: "배송 관리" },
 ];
 const errors: Record<string, string> = {
   forbidden: "운영 관리 권한이 없습니다. 승인된 계정의 로그인 상태를 확인해 주세요.",
@@ -109,11 +108,11 @@ export function AdminDashboard() {
     });
   }
 
-  async function download(kind: "all" | "waiting") {
+  async function download() {
     await work(async () => {
-      const data = await post<{ csv: string }>("admin-export", { id: activeId, waiting: kind === "waiting" });
+      const data = await post<{ csv: string }>("admin-export", { id: activeId });
       const roundName = (active?.title ?? "아이돌 핑거왕").replace(/[\\/:*?"<>|]/g, "_");
-      csvDownload(roundName + (kind === "waiting" ? "_발송대기.csv" : "_배송지전체.csv"), data.csv);
+      csvDownload(roundName + "_제출정보.csv", data.csv);
       setNotice("CSV 다운로드를 시작했습니다.");
     });
   }
@@ -127,20 +126,13 @@ export function AdminDashboard() {
     });
   }
 
-  async function markShipped(winner: AdminWinner) {
+  async function deletePersonalData(winner: AdminWinner) {
+    const target = winner.nickname ? `${winner.nickname} 님` : `접수번호 ${receiptRef(winner.id)}`;
+    if (!window.confirm(`${target}의 개인정보를 삭제하시겠습니까?\n\n가입 이메일·닉네임과 제출한 이름·연락처·이메일·X 계정·주소 등이 삭제됩니다.\n삭제 후 당첨자 조회와 CSV에서 해당 개인정보를 확인할 수 없으며 이 페이지에서 복구할 수 없습니다.`)) return;
     await work(async () => {
-      await post("admin-ship", { id: winner.id, shipped: !winner.shippedAt });
-      await Promise.all([loadRounds(activeId), loadWinners(activeId)]);
-      setNotice(winner.shippedAt ? "발송 대기 상태로 변경했습니다." : "발송 완료 상태로 변경했습니다.");
-    });
-  }
-
-  async function markDelivered(winner: AdminWinner) {
-    if (!window.confirm("경품 배송이 완료되었나요? 당첨자와 배송 개인정보가 파기됩니다.")) return;
-    await work(async () => {
-      await post("admin-delivered", { id: winner.id });
+      await post("admin-delete-personal-data", { id: winner.id, confirm: true });
       await loadWinners(activeId);
-      setNotice("배송 완료로 처리하고 개인정보를 파기했습니다.");
+      setNotice("선택한 당첨자의 개인정보를 삭제했습니다.");
     });
   }
 
@@ -186,9 +178,8 @@ export function AdminDashboard() {
           <div className="admin-metrics">
             {[
               ["당첨자", active.total],
-              ["미접수", active.total - active.submitted],
-              ["배송지 접수", active.submitted],
-              ["발송 완료", active.shipped],
+              ["미제출", active.total - active.submitted],
+              ["제출 완료", active.submitted],
             ].map(([label, value]) => <div className="metric" key={label}><span>{label}</span><strong>{Number(value).toLocaleString("ko-KR")}<small>명</small></strong></div>)}
           </div>
           <nav className="admin-tabs" aria-label="투표 관리">
@@ -225,19 +216,12 @@ export function AdminDashboard() {
           {tab === "winners" && <>
             {!active.published_at && <RosterImport key={active.id} busy={busy} onImport={importRoster} onError={setError} />}
             <section className="admin-panel">
-              <div className="section-heading"><div><h2>당첨자 명단</h2><p>등록된 당첨자와 배송지 접수 상태를 확인할 수 있습니다.</p></div>
+              <div className="section-heading"><div><h2>당첨자 명단</h2><p>개인정보 제출 여부를 확인하고 제출 정보를 내려받을 수 있습니다.</p></div>
+                <button className="admin-outline" type="button" disabled={busy || !winners?.some((row) => row.hasDelivery)} onClick={() => void download()}>제출 정보 CSV ↓</button>
               </div>
-              <WinnerTable winners={winners} canRemove={!active.published_at} busy={busy} onRemove={remove} />
+              <WinnerTable winners={winners} canRemove={!active.published_at} busy={busy} onRemove={remove} onDeletePersonalData={deletePersonalData} />
             </section>
           </>}
-          {tab === "shipping" && <section className="admin-panel">
-            <div className="section-heading"><div><h2>경품 배송 관리</h2><p>배송지 접수 현황을 확인하고 경품 발송 후 완료 처리해 주세요.</p></div></div>
-            <div className="download-row">
-              <button className="admin-strong" type="button" disabled={busy || !winners?.some((row) => row.hasDelivery && !row.shippedAt)} onClick={() => void download("waiting")}>발송 대기 CSV ↓</button>
-              <button className="admin-outline" type="button" disabled={busy || !winners?.some((row) => row.hasDelivery)} onClick={() => void download("all")}>배송지 전체 CSV ↓</button>
-            </div>
-            <WinnerTable shipping winners={winners?.filter((row) => row.submittedAt) ?? null} busy={busy} onShip={markShipped} onDelivered={markDelivered} />
-          </section>}
         </>}
       </main>
     </div>
@@ -289,23 +273,22 @@ function RosterImport({ busy, onImport, onError }: { busy: boolean; onImport: (r
   </section>;
 }
 
-function WinnerTable({ winners, shipping, canRemove, busy, onRemove, onShip, onDelivered }: {
-  winners: AdminWinner[] | null; shipping?: boolean; canRemove?: boolean; busy: boolean;
-  onRemove?: (winner: AdminWinner) => void; onShip?: (winner: AdminWinner) => void; onDelivered?: (winner: AdminWinner) => void;
+function WinnerTable({ winners, canRemove, busy, onRemove, onDeletePersonalData }: {
+  winners: AdminWinner[] | null; canRemove?: boolean; busy: boolean;
+  onRemove?: (winner: AdminWinner) => void; onDeletePersonalData?: (winner: AdminWinner) => void;
 }) {
   if (!winners) return <p className="table-empty">명단을 불러오는 중입니다…</p>;
-  if (!winners.length) return <p className="table-empty">{shipping ? "접수된 배송지가 없습니다." : "등록된 당첨자가 없습니다."}</p>;
+  if (!winners.length) return <p className="table-empty">등록된 당첨자가 없습니다.</p>;
   return <div className="table-frame" tabIndex={0}><table className="winner-table">
-    <thead><tr>{shipping && <th scope="col">접수번호</th>}<th scope="col">뮤니버스 가입 이메일</th><th scope="col">닉네임</th><th scope="col">경품명</th><th scope="col">상태</th>
-      {shipping && <><th scope="col">연락 가능한 이메일</th><th scope="col">X(트위터) 계정</th><th scope="col">접수 시각</th></>}{(shipping || canRemove) && <th scope="col">관리</th>}</tr></thead>
+    <thead><tr><th scope="col">접수번호</th><th scope="col">뮤니버스 가입 이메일</th><th scope="col">닉네임</th><th scope="col">경품명</th><th scope="col">제출 상태</th>
+      <th scope="col">연락 가능한 이메일</th><th scope="col">X(트위터) 계정</th><th scope="col">접수 시각</th><th scope="col">관리</th></tr></thead>
     <tbody>{winners.map((winner) => <tr key={winner.id}>
-      {shipping && <td>{receiptRef(winner.id)}</td>}<td>{winner.account || "파기됨"}</td><td>{winner.nickname || "—"}</td><td>{winner.prize}</td>
-      <td><span className={"row-status" + (winner.shippedAt ? " shipped" : winner.submittedAt ? " received" : "")}>
-        {winner.shippedAt ? (winner.hasDelivery ? "발송 완료" : "발송 완료 · 개인정보 파기") : winner.submittedAt ? (winner.hasDelivery ? "배송지 접수" : "보유 기한 만료") : "미접수"}</span></td>
-      {shipping && <><td>{winner.contactEmail || "—"}</td><td>{winner.xAccount || "—"}</td><td>{winner.submittedAt && formatKst(winner.submittedAt)}</td></>}
-      {shipping && <td><button className="admin-quiet" disabled={busy || !winner.hasDelivery} onClick={() => onShip?.(winner)}>
-        {winner.shippedAt ? "발송 대기로 변경" : "발송 완료 처리"}</button>{winner.shippedAt && winner.hasDelivery && <button type="button" className="admin-quiet" disabled={busy} onClick={() => onDelivered?.(winner)}>배송 완료 · 개인정보 파기</button>}</td>}
-      {canRemove && <td><button className="admin-quiet remove" disabled={busy} onClick={() => onRemove?.(winner)}>삭제</button></td>}
+      <td>{receiptRef(winner.id)}</td><td>{winner.account || "삭제됨"}</td><td>{winner.nickname || "—"}</td><td>{winner.prize}</td>
+      <td><span className={"row-status" + (winner.hasDelivery ? " received" : "")}>
+        {!winner.hasPersonalData ? "개인정보 삭제됨" : winner.submittedAt ? "제출 완료" : "미제출"}</span></td>
+      <td>{winner.contactEmail || "—"}</td><td>{winner.xAccount || "—"}</td><td>{winner.submittedAt ? formatKst(winner.submittedAt) : "—"}</td>
+      <td>{canRemove ? <button type="button" className="admin-quiet remove" disabled={busy} onClick={() => onRemove?.(winner)}>명단에서 제외</button> :
+        <button type="button" className="admin-quiet remove" disabled={busy || !winner.hasPersonalData} onClick={() => onDeletePersonalData?.(winner)}>개인정보 삭제</button>}</td>
     </tr>)}</tbody>
   </table></div>;
 }

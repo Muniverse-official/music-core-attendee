@@ -13,6 +13,7 @@ on:
       - '.github/workflows/attendee-ui-smoke.yml'
       - 'tools/admin-ui-smoke.mjs'
       - 'tools/reserve-ui-smoke.mjs'
+      - 'tools/finger-admin-ui-smoke.mjs'
       - 'programs/finger-king/**'
       - 'site/**'
       - 'site/admin/**'
@@ -36,6 +37,8 @@ jobs:
           npm run build --prefix programs/finger-king
       - name: Check reserve result and separate administrator lists
         run: node tools/reserve-ui-smoke.mjs
+      - name: Check simplified Finger King administration and privacy deletion
+        run: node tools/finger-admin-ui-smoke.mjs
       - name: Save screenshot
         if: always()
         uses: actions/upload-artifact@v4
