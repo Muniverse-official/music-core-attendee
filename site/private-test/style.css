@@ -15,3 +15,9 @@ main,main:has(.art[hidden]){display:block;width:min(100%,46rem);min-height:0;mar
 .lookup-intro{color:#d7c8bd;font-size:.94rem;line-height:1.65;margin:.65rem 0 .85rem;word-break:keep-all;overflow-wrap:anywhere}.lookup-help{display:grid;gap:.28rem;margin:0 0 1.15rem;padding:.65rem .8rem .72rem;border-left:2px solid #ae8060;border-radius:.15rem .4rem .4rem .15rem;background:#241c17}.lookup-help-title{margin:0;color:var(--gold);font-size:.76rem;font-weight:750;line-height:1.45}.lookup-help-steps{display:flex;align-items:baseline;flex-wrap:wrap;gap:.16rem .52rem;margin:0;color:#f0e5dd;font-size:.86rem;line-height:1.5}.lookup-help-arrow{color:#d9aa86}
 
 .lookup-help-follow{display:inline-flex;align-items:baseline;gap:.52rem}.lookup-help-steps span{word-break:keep-all;overflow-wrap:anywhere}
+
+/* Keep registration notices aligned and break only at complete ideas. */
+.registration-page h1,.registration-page #winner-section h2,.registration-page .consent-requirement,.registration-page #phone-hint{letter-spacing:0;font-stretch:normal;text-align:left}
+.registration-page #reserve-notice,.registration-page #phone-hint{white-space:pre-line;word-break:keep-all;overflow-wrap:break-word;line-height:1.65}
+.registration-page #reserve-notice{font-size:.92rem;font-weight:650}
+.registration-page #phone-hint{font-size:.86rem;margin:.65rem 0 .35rem}
