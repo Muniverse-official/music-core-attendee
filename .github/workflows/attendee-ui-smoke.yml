@@ -12,6 +12,7 @@ on:
     paths:
       - '.github/workflows/attendee-ui-smoke.yml'
       - 'tools/admin-ui-smoke.mjs'
+      - 'tools/admin-scoped-ui-smoke.mjs'
       - 'tools/reserve-ui-smoke.mjs'
       - 'tools/finger-admin-ui-smoke.mjs'
       - 'programs/finger-king/**'
@@ -31,6 +32,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Check admin login and latest-round UI
         run: node tools/admin-ui-smoke.mjs
+      - name: Check scoped admin loading and paging
+        run: node tools/admin-scoped-ui-smoke.mjs
       - name: Build Finger King for the integrated console test
         run: |
           npm ci --prefix programs/finger-king

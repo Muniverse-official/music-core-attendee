@@ -42,6 +42,7 @@ jobs:
           npm run test:privacy
           npm run test:finger-contact
           node tools/qa-edge.mjs
+          node tools/qa-scoped-admin.mjs
           node tools/qa-reserve-edge.mjs
           node tools/qa-remediation.mjs
           node tools/qa-worker.mjs

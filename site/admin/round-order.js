@@ -13,7 +13,6 @@ if(!sheetLink&&publicLink){
   publicLink.after(sheetLink);
 }
 
-const initialized=new Set();
 let scheduled=false;
 
 function program(){
@@ -52,18 +51,8 @@ function sortLatestFirst(){
     list.append(fragment);
   }
 
-  const p=program();
-  if(!initialized.has(p)){
-    initialized.add(p);
-    const first=ranked[0]?.button||null;
-    const selected=list.querySelector('.round-item[aria-pressed="true"]');
-    list.scrollTop=0;
-    if(first&&selected!==first){
-      setTimeout(()=>{
-        if(document.body.contains(first))first.click();
-      },0);
-    }
-  }
+  // The scoped API selects the public round. Sorting must not trigger a
+  // second, expensive winner-data request by clicking the newest round.
 }
 
 new MutationObserver(mutations=>{
@@ -71,9 +60,7 @@ new MutationObserver(mutations=>{
 }).observe(list,{childList:true});
 
 document.querySelectorAll('[data-program]').forEach(button=>button.addEventListener('click',()=>{
-  const p=button.dataset.program;
-  if(p)initialized.delete(p);
-  syncSheetLink(p);
+  syncSheetLink();
   schedule();
 },{capture:true}));
 

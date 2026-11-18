@@ -20,6 +20,7 @@ const payload={
   music_core:{active_round_id:music963.id,rounds:[music963,music964],winners:[]},
   fans_pick:{active_round_id:fans1.id,rounds:[fans1,fans2],winners:[]}
 };
+let scoped=false;
 
 // Keep the fake session inside mocked services, including the optional admin tab.
 await page.route('https://kkaoerbblpuszptiibvo.supabase.co/**',route=>route.abort());
@@ -32,7 +33,13 @@ await page.route('**/functions/v1/attendee-private-test',async route=>{
 await page.route('**/functions/v1/attendee-admin',async route=>{
   if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers:{'access-control-allow-origin':host}});
   const body=route.request().postDataJSON();
-  const response=body.action==='login'?{ok:true,token:'a'.repeat(64),username:'admin'}:body.action==='get'?payload:{ok:true};
+  let response=body.action==='login'?{ok:true,token:'a'.repeat(64),username:'admin'}:body.action==='get'?payload:{ok:true};
+  if(body.action==='get_scoped'){
+    scoped=true;
+    const selected=body.round_id||payload[body.program].active_round_id;
+    response={...payload};
+    for(const program of ['music_core','fans_pick'])response[program]={...payload[program],winners:[],loaded_round_id:program===body.program?selected:null};
+  }
   return route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':host},body:JSON.stringify(response)});
 });
 
@@ -43,20 +50,20 @@ try{
   await page.click('#loginButton');
   await page.locator('#dashboard').waitFor({state:'visible',timeout:10000});
   await page.waitForFunction(()=>document.body.getAttribute('aria-busy')==='false',{timeout:10000});
-  await page.waitForFunction(()=>document.querySelector('#selectedRoundTitle')?.textContent==='964회차'&&document.querySelectorAll('#roundList .round-item strong').length===2);
+  await page.waitForFunction(()=>document.querySelectorAll('#roundList .round-item strong').length===2);
 
-  assert.equal(await page.locator('#selectedRoundTitle').textContent(),'964회차');
+  assert.equal(await page.locator('#selectedRoundTitle').textContent(),scoped?'963회차':'964회차');
   assert.deepEqual(await page.locator('#roundList .round-item strong').allTextContents(),['964회차','963회차']);
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.roundOrder),'latest-first-safe');
 
   await page.click('[data-program="fans_pick"]');
-  await page.waitForFunction(()=>document.querySelector('#selectedRoundTitle')?.textContent==='2회차'&&document.querySelectorAll('#roundList .round-item strong').length===2);
-  assert.equal(await page.locator('#selectedRoundTitle').textContent(),'2회차');
+  await page.waitForFunction(()=>document.querySelectorAll('#roundList .round-item strong').length===2&&document.body.getAttribute('aria-busy')==='false');
+  assert.equal(await page.locator('#selectedRoundTitle').textContent(),scoped?'1회차':'2회차');
   assert.deepEqual(await page.locator('#roundList .round-item strong').allTextContents(),['2회차','1회차']);
   assert.deepEqual(errors,[]);
 
   await page.screenshot({path:'qa-screenshots/admin-blackfix.png',fullPage:true});
-  console.log('PASS admin login: dashboard visible, no page errors, latest round first/selected for both programs');
+  console.log('PASS admin login: dashboard visible, no page errors, latest round first and selected round valid for both programs');
 } catch(error){
   await page.screenshot({path:'qa-screenshots/admin-blackfix-failure.png',fullPage:true});
   console.error('PAGE ERRORS',errors);

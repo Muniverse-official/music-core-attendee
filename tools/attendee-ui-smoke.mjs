@@ -20,6 +20,18 @@ await page.route('**/functions/v1/attendee-admin',async route=>{
  const b=route.request().postDataJSON();requests.push(b);let result={ok:true};const s=store[b.program],r=s?.rounds.find(x=>x.id===b.round_id);
  if(b.action==='login')result={ok:true,token:'a'.repeat(64),username:'admin'};
  else if(b.action==='get')result={ok:true,username:'admin',expiresAt:new Date(now+7200000).toISOString(),serverTime:new Date().toISOString(),history:hist,...store};
+ else if(b.action==='get_scoped'){
+  const chosen=b.round_id||store[b.program].active_round_id;
+  result={ok:true,username:'admin',expiresAt:new Date(now+7200000).toISOString(),serverTime:new Date().toISOString(),history:hist,delivery:{}};
+  for(const program of ['music_core','fans_pick']){
+   const source=store[program];
+   result[program]={...source,loaded_round_id:program===b.program?chosen:null,winners:program===b.program?source.winners.filter(w=>w.round_id===chosen):[],rounds:source.rounds.map(round=>({
+    ...round,primary_count:source.winners.filter(w=>w.round_id===round.id&&(w.selection_type||'primary')==='primary').length,
+    reserve_count:source.winners.filter(w=>w.round_id===round.id&&w.selection_type==='reserve').length,
+    registered_count:source.winners.filter(w=>w.round_id===round.id&&w.submitted).length
+   }))};
+  }
+ }
  else if(b.action==='create_round'){const id=crypto.randomUUID(),src=s.rounds.find(x=>x.id===b.source_round_id);s.rounds.unshift({id,title:b.title,program:b.program,config:src?{...src.config,test_mode:'false',registration_paused:'false'}:{...blank},version:1,is_public:false,archived:false});result={ok:true,round_id:id};}
  else if(b.action==='save_config'){assert(r,'Save must identify its owning round');assert.equal(b.expected_version,r.version);for(const k of Object.keys(config))r.config[k]=String(b[k]);r.title=b.title;r.version++;if(r.is_public)s.config={...r.config};}
  else if(b.action==='add_winners'){assert(r);for(const w of b.winners)s.winners.push({...w,id:crypto.randomUUID(),round_id:r.id,event_date:r.config.event_date,submitted:false});result={ok:true,added:b.winners.length,duplicates:0};}
@@ -28,7 +40,7 @@ await page.route('**/functions/v1/attendee-admin',async route=>{
  else if(b.action==='publish_round'){assert(r);assert.equal(b.confirm,true);s.rounds.forEach(x=>{if(x.is_public||x.id===r.id)x.version++;x.is_public=x.id===r.id});s.active_round_id=r.id;s.config={...r.config};}
  else if(['archive_round','restore_round'].includes(b.action)){assert(r);assert(!r.is_public);r.archived=b.action==='archive_round';r.version++;}
  else assert.fail('Unexpected mock action '+b.action);
- if(s&&b.action!=='get')hist.unshift({program:b.program,action:b.action,detail:{round_id:b.round_id||result.round_id},created_at:new Date().toISOString()});
+ if(s&&!['get','get_scoped'].includes(b.action))hist.unshift({program:b.program,action:b.action,detail:{round_id:b.round_id||result.round_id},created_at:new Date().toISOString()});
  return route.fulfill({status:200,contentType:'application/json',headers:mockHeaders,body:JSON.stringify(result)});
 });
 const settle=()=>page.waitForFunction(()=>document.body.getAttribute('aria-busy')==='false');

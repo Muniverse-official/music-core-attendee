@@ -1,5 +1,5 @@
 import { revealRows } from '../_shared/privacy.ts';
-const ORIGIN='https://muniverse-official.github.io',REV='20260915-both-reserve-v1';type O=Record<string,any>;
+const ORIGIN='https://muniverse-official.github.io',REV='20261118-admin-scoped-v1';type O=Record<string,any>;
 class Err extends Error{constructor(public code:string,public status=400){super(code)}}
 function H(r:Request){const h:Record<string,string>={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Vary':'Origin','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'authorization,content-type,x-admin-request','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Attendee-Revision':REV};if(r.headers.get('origin')===ORIGIN)h['Access-Control-Allow-Origin']=ORIGIN;return h}
 function J(r:Request,b:O,s=200){return new Response(JSON.stringify(b),{status:s,headers:H(r)})}
@@ -21,6 +21,17 @@ try{const text=await r.text();if(new TextEncoder().encode(text).length>131072)th
 if(b.action==='login'){const u=C(b.username,40).toLowerCase();if(typeof b.password!=='string'||b.password.length>256)throw new Err('INVALID_CREDENTIALS',401);const ip=(r.headers.get('cf-connecting-ip')||r.headers.get('x-real-ip')||(r.headers.get('x-forwarded-for')||'unknown').split(',').at(-1)||'unknown').trim();if(!await throttle(await S(env().key+':console-login:'+ip),12,600)||!await throttle('console-login-global',120,600))throw new Err('RATE_LIMITED',429);const a=await account(u),h=await PH(b.password,a?.password_salt||'0'.repeat(64),a?.iterations||600000);if(!a?.active||!eq(h,a.password_hash)){await new Promise(r=>setTimeout(r,250));throw new Err('INVALID_CREDENTIALS',401)}const token=random(),expiresAt=new Date(Date.now()+7200000).toISOString();await post('attendee_console_sessions',{token_hash:await S(token),username:u,expires_at:expiresAt});await audit(u,'login');return J(r,{ok:true,token,expiresAt,username:u,revision:REV})}
 const s=await auth(r);if(!await throttle('console-session:'+s.token_hash,180,60))throw new Err('RATE_LIMITED',429);
 if(b.action==='logout'){await DB(`attendee_console_sessions?token_hash=eq.${s.token_hash}`,{method:'DELETE'});return J(r,{ok:true})}
+if(b.action==='get_scoped'){
+ const selected=C(b.program,20);if(!['music_core','fans_pick'].includes(selected))throw new Err('INVALID_PROGRAM');
+ const selectedRound=b.round_id?ID(b.round_id):null;
+ await audit(s.username,'view_personal_data');
+ const [music_core,fans_pick,history]=await Promise.all([
+  rpc('attendee_round_data_scoped',{p_program:'music_core',p_round_id:selected==='music_core'?selectedRound:null,p_include_winners:selected==='music_core'}),
+  rpc('attendee_round_data_scoped',{p_program:'fans_pick',p_round_id:selected==='fans_pick'?selectedRound:null,p_include_winners:selected==='fans_pick'}),
+  DB('attendee_console_audit?select=id,username,program,action,detail,created_at&order=id.desc&limit=60')
+ ]);
+ return J(r,{ok:true,username:s.username,expiresAt:s.expires_at,music_core,fans_pick,history,delivery:{},serverTime:new Date().toISOString(),revision:REV});
+}
 if(b.action==='get'){await audit(s.username,'view_personal_data');const[music_core,fans_pick,history,delivery]=await Promise.all([rpc('attendee_round_data',{p_program:'music_core'}),rpc('attendee_round_data',{p_program:'fans_pick'}),DB('attendee_console_audit?select=id,username,program,action,detail,created_at&order=id.desc&limit=60'),rpc('attendee_delivery_console',{})]);return J(r,{ok:true,username:s.username,expiresAt:s.expires_at,music_core,fans_pick,history,delivery,serverTime:new Date().toISOString(),revision:REV})}
 if(b.action==='change_password'){if(!await throttle('console-password:'+s.username,5,600))throw new Err('RATE_LIMITED',429);if(typeof b.current_password!=='string'||typeof b.new_password!=='string'||b.new_password.length<12||b.new_password.length>128)throw new Err('PASSWORD_LENGTH');if(!eq(await PH(b.current_password,s.account.password_salt,s.account.iterations),s.account.password_hash))throw new Err('INVALID_CREDENTIALS',400);const salt=random();await DB(`attendee_console_accounts?username=eq.${encodeURIComponent(s.username)}`,{method:'PATCH',body:JSON.stringify({password_hash:await PH(b.new_password,salt,600000),password_salt:salt,iterations:600000,updated_at:new Date().toISOString()})});await DB(`attendee_console_sessions?username=eq.${encodeURIComponent(s.username)}`,{method:'DELETE'});await audit(s.username,'change_password');return J(r,{ok:true,relogin:true})}
 const p=b.program;if(!['music_core','fans_pick'].includes(p))throw new Err('INVALID_PROGRAM');let data:O={};

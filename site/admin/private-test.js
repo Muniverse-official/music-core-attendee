@@ -296,16 +296,12 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     get active() { return active || !fingerPanel.hidden; },
     hide() { tab.hidden = true; leave(); },
     async enable() {
-      const token = getToken();
-      try {
-        const data = await request({action:'state'});
-        if (token === getToken() && data.title) {
-          tab.textContent = data.title;
-          document.getElementById('privateTestTitle').textContent = data.title.replace(/^\d+\.\s*/, '');
-          tab.hidden = false;
-          if (location.hash === '#private-test' && !active) await tab.onclick();
-        }
-      } catch { /* The existing programs stay available if the optional test service is offline. */ }
+      if (!getToken()) return;
+      tab.textContent = '3. ENHYPEN';
+      document.getElementById('privateTestTitle').textContent = 'ENHYPEN';
+      tab.hidden = false;
+      // The private list contains personal data; fetch it only when this tab opens.
+      if (location.hash === '#private-test' && !active) await tab.onclick();
     },
     expireAt(value) {
       clearTimeout(expiryTimer);
