@@ -91,12 +91,23 @@ await context.route(origin+'/functions/v1/finger-king?**',async route=>{
 await admin.click('#fingerKingTab');
 assert.equal(await admin.locator('#fingerKingPanel').isVisible(),true);
 assert.equal(await admin.locator('#roundList').isVisible(),false);
-await admin.frameLocator('#fingerKingWorkspace iframe').locator('input[name="title"]').waitFor({state:'visible'});
+await admin.locator('#fingerKingWorkspace .admin-form input[name="title"]').waitFor({state:'visible'});
+await admin.waitForFunction(()=>getComputedStyle(document.querySelector('#fingerKingWorkspace').shadowRoot.querySelector('.admin-panel')).backgroundColor==='rgb(255, 255, 255)');
+assert.equal(await admin.locator('#fingerKingWorkspace iframe').count(),0);
+assert.equal(await admin.locator('#fingerKingWorkspace .admin-top').count(),0);
+assert.equal(await admin.locator('#fingerKingWorkspace .admin-app').count(),1);
 assert.deepEqual(fingerCalls,[{action:'admin-rounds',session:'Bearer '+'a'.repeat(64)}]);
+await admin.screenshot({path:path.join(base,'qa-screenshots/finger-admin-unified-desktop.png'),fullPage:true});
+await admin.setViewportSize({width:390,height:844});
+assert.equal(await admin.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+await admin.screenshot({path:path.join(base,'qa-screenshots/finger-admin-unified-mobile.png'),fullPage:true});
+await admin.setViewportSize({width:1400,height:1000});
 await admin.click('[data-program="fans_pick"]');
 assert.equal(await admin.locator('#fingerKingPanel').isVisible(),false);
-assert.equal(await admin.locator('#fingerKingWorkspace iframe').count(),0);
+assert.equal(await admin.locator('#fingerKingWorkspace .admin-app').count(),0);
 assert.equal(await admin.locator('#roundList').isVisible(),true);
+await admin.click('#fingerKingTab');await admin.locator('#fingerKingWorkspace .admin-form input[name="title"]').waitFor({state:'visible'});
+assert.deepEqual(fingerCalls,[{action:'admin-rounds',session:'Bearer '+'a'.repeat(64)},{action:'admin-rounds',session:'Bearer '+'a'.repeat(64)}]);
 await admin.click('#logout');await admin.locator('#loginPanel').waitFor({state:'visible'});assert.equal(await admin.locator('#attendeeRows tr').count(),0);assert.deepEqual(errors,[]);
 console.log('PASS reserve same fields + foreign phone registration, all five languages through completion and repeated lookup, primary registration, separate lists, registration filter and CSV, promotion, FANS PICK compatibility');
 }catch(error){for(const [index,page] of context.pages().entries())await page.screenshot({path:path.join(base,'qa-screenshots/reserve-failure-'+index+'.png'),fullPage:true}).catch(()=>{});console.error('PAGE ERRORS',errors);throw error}finally{await browser.close()}

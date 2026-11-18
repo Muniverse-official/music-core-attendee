@@ -22,7 +22,7 @@ function errorText(error: unknown) {
   return error instanceof ClientError ? error.detail ?? errors[error.code] ?? errors.service : errors.service;
 }
 
-export function AdminDashboard() {
+export function AdminDashboard({ embedded = false }: { embedded?: boolean }) {
   const [rounds, setRounds] = useState<RoundSummary[] | null>(null);
   const [activeId, setActiveId] = useState("");
   const [creating, setCreating] = useState(false);
@@ -136,11 +136,11 @@ export function AdminDashboard() {
     });
   }
 
-  return <div className="admin-app">
-    <header className="admin-top"><div className="admin-top-wrap">
+  return <div className={embedded ? "admin-app embedded" : "admin-app"}>
+    {!embedded && <header className="admin-top"><div className="admin-top-wrap">
       <div className="admin-top-brand"><Brand /><span>아이돌 핑거왕 운영 관리</span></div>
       <a href="/music-core-attendee/finger-king/" className="admin-preview">당첨자 페이지 ↗</a>
-    </div></header>
+    </div></header>}
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <div className="sidebar-title"><h2>투표 목록</h2><button className="admin-strong add-round" type="button" disabled={busy} onClick={() => {

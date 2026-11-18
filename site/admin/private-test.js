@@ -33,27 +33,18 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   <dialog id="enhypenNumber" aria-labelledby="enhypenNumberTitle"><form id="enhypenNumberForm"><h2 id="enhypenNumberTitle"></h2><p id="enhypenNumberName"></p><label>개인 당첨 번호<input id="enhypenNumberValue" type="text" inputmode="numeric" pattern="[0-9]{1,16}" maxlength="16" required></label><label id="enhypenDeadlineWrap" hidden>정보 입력 기한 (한국시간)<input id="enhypenDeadline" type="datetime-local"></label><p class="muted small">다른 당첨자와 중복되지 않는 숫자를 입력하세요.</p><p id="enhypenNumberMessage" role="status" class="message"></p><div class="actions"><button id="enhypenNumberCancel" class="secondary" type="button">취소</button><button type="submit">저장</button></div></form></dialog>`;
   dashboard.insertBefore(panel, settings);
   const fingerPanel = document.createElement('section');
-  fingerPanel.className = 'card';
+  fingerPanel.className = 'finger-admin-pane';
   fingerPanel.id = 'fingerKingPanel';
   fingerPanel.hidden = true;
   fingerPanel.setAttribute('aria-labelledby', 'fingerKingTitle');
-  fingerPanel.innerHTML = `<div class="section-head"><h2 id="fingerKingTitle">아이돌 핑거왕</h2></div>
-    <div class="actions">
+  fingerPanel.innerHTML = `<div class="finger-admin-heading"><h2 id="fingerKingTitle">아이돌 핑거왕</h2><div class="actions">
       <a href="../finger-king/" target="_blank" rel="noopener noreferrer">당첨자 조회 페이지 ↗</a>
       <a href="../finger-king/?preview=delivery" target="_blank" rel="noopener noreferrer">배송지 입력창 검수 ↗</a>
-    </div>
+    </div></div>
+    <p id="fingerKingMessage" role="status" class="message error"></p>
     <div id="fingerKingWorkspace"></div>`;
   const fingerWorkspace = fingerPanel.querySelector('#fingerKingWorkspace');
-  let fingerFrame;
-  window.addEventListener('message', (event) => {
-    if (event.origin !== location.origin || !fingerFrame || event.source !== fingerFrame.contentWindow) return;
-    if (event.data?.type === 'finger-admin-ready' && getToken()) {
-      fingerFrame.contentWindow.postMessage({ type: 'finger-admin-session', token: getToken() }, location.origin);
-    }
-    if (event.data?.type === 'finger-admin-height' && Number.isSafeInteger(event.data.height)) {
-      fingerFrame.height = String(Math.max(480, Math.min(3600, event.data.height)));
-    }
-  });
+  let fingerModule, fingerImport, fingerOperation = 0;
   dashboard.insertBefore(fingerPanel, settings);
   const message = document.getElementById('enhypenTestMessage');
   const pause = document.getElementById('enhypenTestPause');
@@ -208,6 +199,8 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
 
   function leave() {
     ++operation;
+    ++fingerOperation;
+    fingerModule?.unmountFingerAdmin();
     active = false;
     state = undefined;
     input.value = '';
@@ -219,8 +212,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     setLoading(false);
     panel.hidden = true;
     fingerPanel.hidden = true;
-    fingerFrame?.remove();
-    fingerFrame = undefined;
+    fingerPanel.querySelector('#fingerKingMessage').textContent = '';
     fingerTab.setAttribute('aria-pressed', 'false');
     existing.hidden = false;
     tab.setAttribute('aria-pressed', 'false');
@@ -239,16 +231,19 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   fingerTab.onclick = async () => {
     if (!fingerPanel.hidden || !getToken() || !await beforeSwitch()) return;
     if (active && input.value.trim() && !confirm('저장하지 않은 엔하이픈 명단을 버리고 이동할까요?')) return;
+    const token = getToken();
     leave();
+    const requestId = ++fingerOperation;
     existing.hidden = true;
     fingerPanel.hidden = false;
-    fingerFrame = document.createElement('iframe');
-    fingerFrame.title = '아이돌 핑거왕 운영 관리';
-    fingerFrame.src = '../finger-king/admin.html';
-    fingerFrame.height = '640';
-    fingerWorkspace.replaceChildren(fingerFrame);
     fingerTab.setAttribute('aria-pressed', 'true');
     tabs.querySelectorAll('[data-program]').forEach(button => button.setAttribute('aria-pressed', 'false'));
+    try {
+      fingerModule = await (fingerImport ??= import('../finger-king/admin-embed.js').catch(error => { fingerImport = undefined; throw error; }));
+      if (requestId === fingerOperation && !fingerPanel.hidden && token === getToken()) fingerModule.mountFingerAdmin(fingerWorkspace, token);
+    } catch {
+      if (requestId === fingerOperation) fingerPanel.querySelector('#fingerKingMessage').textContent = '핑거왕 관리 화면을 불러오지 못했습니다. 다른 탭을 선택한 뒤 다시 열어 주세요.';
+    }
   };
   pause.onclick = () => {
     if (!state.open && !confirm('발표를 공개할까요? 링크를 아는 당첨자는 지금부터 결과를 확인할 수 있습니다.')) return;

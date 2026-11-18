@@ -11,6 +11,14 @@ await build({
   jsx: "automatic",
   outdir: destination,
 });
+await build({
+  entryPoints: { "admin-embed": "ui/entry/admin-embed.tsx" },
+  bundle: true,
+  minify: true,
+  jsx: "automatic",
+  format: "esm",
+  outdir: destination,
+});
 await Promise.all([
   cp("templates", destination, { recursive: true }),
   cp("ui/public/assets", resolve(destination, "assets"), { recursive: true }),

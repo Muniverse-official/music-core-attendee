@@ -1,0 +1,13 @@
+.admin-app.embedded { min-height: 0; background: transparent; }
+.admin-app.embedded .admin-shell {
+  width: 100%;
+  margin: 0;
+  grid-template-columns: minmax(190px, 235px) minmax(0, 1fr);
+}
+.admin-app.embedded .admin-main { min-width: 0; }
+@media (max-width: 800px) {
+  .admin-app.embedded .admin-shell { grid-template-columns: minmax(140px, 186px) minmax(0, 1fr); }
+}
+@media (max-width: 620px) {
+  .admin-app.embedded .admin-shell { grid-template-columns: minmax(0, 1fr); }
+}
