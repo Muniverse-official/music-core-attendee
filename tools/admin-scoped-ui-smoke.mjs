@@ -29,7 +29,7 @@ await context.route(origin+'/**',route=>route.abort());
 await context.route(origin+'/functions/v1/attendee-private-test',route=>{
  if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers:{'access-control-allow-origin':host,'access-control-allow-headers':'authorization,content-type,x-admin-request'}});
  privateRequests.push(route.request().postDataJSON());
- return route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':host},body:JSON.stringify({ok:true,title:'3. ENHYPEN',open:false,winners:[]})});
+ return route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':host},body:JSON.stringify({ok:true,title:'3. ENHYPEN',open:false,published:false,startAt:null,endAt:'2026-11-26T00:00:00+09:00',winners:[]})});
 });
 await context.route(origin+'/functions/v1/attendee-admin',route=>{
  if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers:{'access-control-allow-origin':host,'access-control-allow-headers':'authorization,content-type,x-admin-request'}});
@@ -71,7 +71,7 @@ try{
  await page.click('[data-program="fans_pick"]');await page.waitForFunction(()=>document.querySelector('#selectedRoundTitle')?.textContent==='2회차'&&document.body.getAttribute('aria-busy')==='false');
  assert.equal(requests.filter(r=>r.action==='get_scoped').at(-1).program,'fans_pick');
  assert.equal(privateRequests.length,0);
- await page.getByRole('button',{name:'3. ENHYPEN'}).click();await page.waitForFunction(()=>document.querySelector('#privateTestTitle')?.textContent==='ENHYPEN'&&document.querySelector('#enhypenTestStatus')?.textContent==='미공개');
+ await page.getByRole('button',{name:'3. ENHYPEN'}).click();await page.waitForFunction(()=>document.querySelector('#privateTestTitle')?.textContent==='ENHYPEN'&&document.querySelector('#enhypenTestStatus')?.textContent==='비공개');
  assert.equal(privateRequests.length,1,'ENHYPEN data loads only on tab open');
  assert.deepEqual(pageErrors,[]);
  console.log('PASS scoped initial/program/round requests, no ENHYPEN prefetch, winner/attendee 50-row paging, delayed search, full filtered CSV');
