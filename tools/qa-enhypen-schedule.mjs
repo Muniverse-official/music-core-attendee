@@ -94,4 +94,19 @@ const before = calls.filter(item=>item.path==='rpc/enhypen_winner_manage').lengt
 await call({action:'schedule',startAt:endAt,endAt:startAt},true,400,'INVALID_WINDOW');
 await call({action:'schedule',startAt:'',endAt},true,400,'INVALID_WINDOW');
 assert.equal(calls.filter(item=>item.path==='rpc/enhypen_winner_manage').length,before);
-console.log('PASS ENHYPEN announcement schedule, visibility, and public access gates');
+
+// The administrator can import more than the 50 allocated seats in the primary list.
+// The separate reserve list retains its 30-person limit.
+const roster = count => Array.from({length:count}, (_,i) => ({
+  email:`fan${i}@example.invalid`, nickname:`Fan ${i}`, number:`M${i + 1}`,
+}));
+await call({action:'import',selection:'primary',rows:roster(51)},true);
+const primaryImport = calls.filter(item=>item.path==='rpc/enhypen_winner_manage').at(-1);
+assert.equal(primaryImport.payload.p_data.selection,'primary');
+assert.equal(primaryImport.payload.p_data.rows.length,51);
+assert.equal(primaryImport.payload.p_data.rows[50].number,'M51');
+const beforeReserve = calls.filter(item=>item.path==='rpc/enhypen_winner_manage').length;
+await call({action:'import',selection:'reserve',rows:roster(31)},true,400,'CAPACITY');
+assert.equal(calls.filter(item=>item.path==='rpc/enhypen_winner_manage').length,beforeReserve);
+await call({action:'import',selection:'reserve',rows:roster(30)},true);
+console.log('PASS ENHYPEN announcement window and primary >50 import with reserve limit');

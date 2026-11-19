@@ -4,7 +4,7 @@ import { wideBanner } from './wide-banner.ts';
 import { countryCodes } from './registration-countries.ts';
 
 const origin = 'https://muniverse-official.github.io';
-const revision = 'enhypen-announcement-schedule-1';
+const revision = 'enhypen-primary-capacity-1';
 const noticeVersion = '2026-11-13-v2';
 const languages = ['ko','en','ja','zh-TW','zh-CN'];
 const legacyShowEnd = '2026-11-26T00:00:00+09:00';
@@ -215,9 +215,9 @@ Deno.serve(async req => {
 
     let data;
     if (action === 'import') {
-      const limit = body.selection === 'primary' ? 50 : body.selection === 'reserve' ? 30 : 0;
+      const limit = body.selection === 'primary' ? 500 : body.selection === 'reserve' ? 30 : 0;
       if (!Array.isArray(body.rows) || !body.rows.length || body.rows.length > limit) throw new RequestError(400,'CAPACITY');
-      const rows = await Promise.all(body.rows.map(async (row:Record<string, unknown>) => ({...await identity(row), number:limit === 50 ? winnerNumber(row.number) : null})));
+      const rows = await Promise.all(body.rows.map(async (row:Record<string, unknown>) => ({...await identity(row), number:body.selection === 'primary' ? winnerNumber(row.number) : null})));
       data = {selection:body.selection, rows};
     } else if (action === 'visibility' && typeof body.open === 'boolean') {
       data = {open:body.open};

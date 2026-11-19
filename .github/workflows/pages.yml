@@ -43,6 +43,7 @@ jobs:
           npm run test:finger-contact
           node tools/qa-edge.mjs
           node --experimental-transform-types tools/qa-enhypen-schedule.mjs
+          node tools/qa-enhypen-capacity-db.mjs
           node tools/qa-scoped-admin.mjs
           node tools/qa-reserve-edge.mjs
           node tools/qa-remediation.mjs

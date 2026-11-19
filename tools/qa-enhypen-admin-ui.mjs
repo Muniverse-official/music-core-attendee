@@ -74,6 +74,9 @@ try {
   await page.click('#loginButton');
   await page.getByRole('button',{name:'3. ENHYPEN'}).click();
   await status('비공개');
+  assert.equal(await page.locator('#enhypenPrimaryCount').textContent(),'1');
+  assert.equal(await page.locator('#enhypenReserveCount').textContent(),'0');
+  assert.doesNotMatch(await page.locator('[data-enhypen-kind="primary"]').textContent(),/\/50/);
   assert.equal(await page.locator('#enhypenStartAt').inputValue(),'2026-11-20T09:00');
   assert.equal(await page.locator('#enhypenEndAt').inputValue(),'2026-11-22T09:00');
   assert.equal(await page.locator('#enhypenTestPause').textContent(),'공개로 전환');

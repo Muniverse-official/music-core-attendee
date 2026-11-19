@@ -30,7 +30,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     <button id="enhypenScheduleSave" type="submit">발표 기간 저장</button><p id="enhypenScheduleMessage" role="status" class="message"></p>
   </form><div class="divider"></div>
   <p id="enhypenTestMessage" role="status" class="message"></p>
-  <nav class="tabs" aria-label="엔하이픈 당첨 구분"><button type="button" data-enhypen-kind="primary" aria-pressed="true">본 당첨 <span id="enhypenPrimaryCount">0</span>/50</button><button type="button" data-enhypen-kind="reserve" aria-pressed="false">예비 당첨 <span id="enhypenReserveCount">0</span>/30</button><button type="button" data-enhypen-kind="withdrawn" aria-pressed="false">방청 취소</button></nav>
+  <nav class="tabs" aria-label="엔하이픈 당첨 구분"><button type="button" data-enhypen-kind="primary" aria-pressed="true">본 당첨 <span id="enhypenPrimaryCount">0</span></button><button type="button" data-enhypen-kind="reserve" aria-pressed="false">예비 당첨 <span id="enhypenReserveCount">0</span>/30</button><button type="button" data-enhypen-kind="withdrawn" aria-pressed="false">방청 취소</button></nav>
   <form id="enhypenImport"><label>당첨자 명단 붙여넣기<textarea id="enhypenRows" rows="5" required></textarea></label><p id="enhypenFormat" class="muted small"></p><button type="submit">명단 추가</button></form>
   <div class="section-head"><h2 id="enhypenListTitle">본 당첨자 명단</h2><div class="actions"><button id="enhypenCsv" class="secondary" type="button">이 목록 CSV</button><button id="enhypenWeverseCsv" class="secondary" type="button">위버스 제공용 CSV</button></div></div>
   <div class="filters"><input id="enhypenSearch" type="search" aria-label="이메일·닉네임·번호 검색" placeholder="이메일·닉네임·번호 검색"><select id="enhypenFilter" aria-label="정보 등록 상태"><option value="all">전체 상태</option><option value="agreed">등록 완료</option><option value="pending">미등록</option></select><span id="enhypenVisible" class="muted" aria-live="polite"></span></div>
@@ -72,7 +72,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   let loading = false;
   let expiryTimer;
   let statusTimer;
-  const errors = {CAPACITY:'본 당첨 50명 또는 예비 당첨 30명 한도에 도달했습니다. 예비 당첨자를 전환하려면 먼저 본 당첨 자리를 확보해 주세요.', DUPLICATE_NUMBER:'이미 부여된 당첨 번호입니다.', DUPLICATE_WINNER:'이미 등록된 이메일·닉네임 조합이 있습니다.', INVALID_FIELDS:'이메일과 닉네임 형식을 확인해 주세요.', INVALID_NUMBER:'당첨 번호는 영문·숫자 1~16자로 입력하세요.', INVALID_DEADLINE:'정보 입력 기한을 현재 시각 이후, 11월 25일 이내로 지정해 주세요.', INVALID_WINDOW:'시작시간과 마감시간을 모두 입력하고 마감시간을 시작시간보다 늦게 지정해 주세요.', INVALID_SCHEDULE:'시작시간과 마감시간을 확인해 주세요.', INVALID_TRANSITION:'현재 상태에서는 변경할 수 없습니다. 명단을 새로고침해 주세요.', NO_PRIMARY:'본 당첨자를 추가한 뒤 공개할 수 있습니다.', WINNER_MISSING:'명단에 없는 당첨자입니다.'};
+  const errors = {CAPACITY:'등록 가능한 인원을 초과했습니다. 한 번에 최대 500명, 예비 당첨은 총 30명까지 입력할 수 있습니다.', DUPLICATE_NUMBER:'이미 부여된 당첨 번호입니다.', DUPLICATE_WINNER:'이미 등록된 이메일·닉네임 조합이 있습니다.', INVALID_FIELDS:'이메일과 닉네임 형식을 확인해 주세요.', INVALID_NUMBER:'당첨 번호는 영문·숫자 1~16자로 입력하세요.', INVALID_DEADLINE:'정보 입력 기한을 현재 시각 이후, 11월 25일 이내로 지정해 주세요.', INVALID_WINDOW:'시작시간과 마감시간을 모두 입력하고 마감시간을 시작시간보다 늦게 지정해 주세요.', INVALID_SCHEDULE:'시작시간과 마감시간을 확인해 주세요.', INVALID_TRANSITION:'현재 상태에서는 변경할 수 없습니다. 명단을 새로고침해 주세요.', NO_PRIMARY:'본 당첨자를 추가한 뒤 공개할 수 있습니다.', WINNER_MISSING:'명단에 없는 당첨자입니다.'};
 
   const kstInput = value => {
     const time = Date.parse(value || '');
