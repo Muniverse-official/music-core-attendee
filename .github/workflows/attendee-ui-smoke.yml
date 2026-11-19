@@ -6,6 +6,7 @@ on:
       - 'programs/finger-king/**'
       - 'site/**'
       - 'tools/*smoke.mjs'
+      - 'tools/qa-enhypen-admin-ui.mjs'
       - '.github/workflows/attendee-ui-smoke.yml'
   push:
     branches: [main]
@@ -15,6 +16,7 @@ on:
       - 'tools/admin-scoped-ui-smoke.mjs'
       - 'tools/reserve-ui-smoke.mjs'
       - 'tools/finger-admin-ui-smoke.mjs'
+      - 'tools/qa-enhypen-admin-ui.mjs'
       - 'programs/finger-king/**'
       - 'site/**'
       - 'site/admin/**'
@@ -34,6 +36,8 @@ jobs:
         run: node tools/admin-ui-smoke.mjs
       - name: Check scoped admin loading and paging
         run: node tools/admin-scoped-ui-smoke.mjs
+      - name: Check ENHYPEN announcement schedule and visibility UI
+        run: node tools/qa-enhypen-admin-ui.mjs
       - name: Build Finger King for the integrated console test
         run: |
           npm ci --prefix programs/finger-king

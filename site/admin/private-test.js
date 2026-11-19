@@ -22,7 +22,13 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   panel.className = 'card';
   panel.hidden = true;
   panel.innerHTML = `<div class="section-head"><div><h2 id="privateTestTitle">비공개 테스트</h2><span id="enhypenTestStatus" class="badge"></span></div><button id="enhypenTestRefresh" class="secondary" type="button">새로고침</button></div>
-  <div class="actions"><button id="enhypenTestOpen" type="button">당첨 발표 페이지 열기</button><button id="enhypenTestPause" class="secondary" type="button">발표 공개</button></div>
+  <div class="actions"><button id="enhypenTestOpen" type="button">당첨 발표 페이지 열기</button><button id="enhypenTestPause" class="secondary" type="button">공개로 전환</button></div>
+  <p id="enhypenVisibilityNote" class="muted small"></p>
+  <form id="enhypenSchedule"><div class="section-head"><h3>발표 기간</h3><span class="badge">한국시간 KST</span></div>
+    <div class="form-grid"><label>공개 시작시간 (한국시간)<input id="enhypenStartAt" type="datetime-local" required></label><label>마감시간 (한국시간)<input id="enhypenEndAt" type="datetime-local" required></label></div>
+    <p class="muted small">시작시간부터 마감시간 전까지만 당첨 결과를 조회할 수 있습니다. 비공개로 설정하면 기간 안에도 조회할 수 없습니다.</p>
+    <button id="enhypenScheduleSave" type="submit">발표 기간 저장</button><p id="enhypenScheduleMessage" role="status" class="message"></p>
+  </form><div class="divider"></div>
   <p id="enhypenTestMessage" role="status" class="message"></p>
   <nav class="tabs" aria-label="엔하이픈 당첨 구분"><button type="button" data-enhypen-kind="primary" aria-pressed="true">본 당첨 <span id="enhypenPrimaryCount">0</span>/50</button><button type="button" data-enhypen-kind="reserve" aria-pressed="false">예비 당첨 <span id="enhypenReserveCount">0</span>/30</button><button type="button" data-enhypen-kind="withdrawn" aria-pressed="false">방청 취소</button></nav>
   <form id="enhypenImport"><label>당첨자 명단 붙여넣기<textarea id="enhypenRows" rows="5" required></textarea></label><p id="enhypenFormat" class="muted small"></p><button type="submit">명단 추가</button></form>
@@ -51,6 +57,9 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   const open = document.getElementById('enhypenTestOpen');
   const refresh = document.getElementById('enhypenTestRefresh');
   const get = id => document.getElementById(id);
+  const schedule = get('enhypenSchedule');
+  const startAt = get('enhypenStartAt');
+  const endAt = get('enhypenEndAt');
   const input = get('enhypenRows');
   const dialog = get('enhypenNumber');
   const numberInput = get('enhypenNumberValue');
@@ -62,13 +71,37 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   let operation = 0;
   let loading = false;
   let expiryTimer;
-  const errors = {CAPACITY:'본 당첨 50명 또는 예비 당첨 30명 한도에 도달했습니다. 예비 당첨자를 전환하려면 먼저 본 당첨 자리를 확보해 주세요.', DUPLICATE_NUMBER:'이미 부여된 당첨 번호입니다.', DUPLICATE_WINNER:'이미 등록된 이메일·닉네임 조합이 있습니다.', INVALID_FIELDS:'이메일과 닉네임 형식을 확인해 주세요.', INVALID_NUMBER:'당첨 번호는 영문·숫자 1~16자로 입력하세요.', INVALID_DEADLINE:'정보 입력 기한을 현재 시각 이후, 11월 25일 이내로 지정해 주세요.', INVALID_TRANSITION:'현재 상태에서는 변경할 수 없습니다. 명단을 새로고침해 주세요.', NO_PRIMARY:'본 당첨자를 추가한 뒤 공개할 수 있습니다.', WINNER_MISSING:'명단에 없는 당첨자입니다.'};
+  let statusTimer;
+  const errors = {CAPACITY:'본 당첨 50명 또는 예비 당첨 30명 한도에 도달했습니다. 예비 당첨자를 전환하려면 먼저 본 당첨 자리를 확보해 주세요.', DUPLICATE_NUMBER:'이미 부여된 당첨 번호입니다.', DUPLICATE_WINNER:'이미 등록된 이메일·닉네임 조합이 있습니다.', INVALID_FIELDS:'이메일과 닉네임 형식을 확인해 주세요.', INVALID_NUMBER:'당첨 번호는 영문·숫자 1~16자로 입력하세요.', INVALID_DEADLINE:'정보 입력 기한을 현재 시각 이후, 11월 25일 이내로 지정해 주세요.', INVALID_WINDOW:'시작시간과 마감시간을 모두 입력하고 마감시간을 시작시간보다 늦게 지정해 주세요.', INVALID_SCHEDULE:'시작시간과 마감시간을 확인해 주세요.', INVALID_TRANSITION:'현재 상태에서는 변경할 수 없습니다. 명단을 새로고침해 주세요.', NO_PRIMARY:'본 당첨자를 추가한 뒤 공개할 수 있습니다.', WINNER_MISSING:'명단에 없는 당첨자입니다.'};
+
+  const kstInput = value => {
+    const time = Date.parse(value || '');
+    return Number.isFinite(time) ? new Date(time + 9 * 3600000).toISOString().slice(0, 16) : '';
+  };
+  const kstTimestamp = value => `${value}:00+09:00`;
+  function renderAnnouncementStatus() {
+    if (!state) return;
+    const published = state.published === true;
+    const now = Date.now();
+    const start = Date.parse(state.startAt);
+    const end = Date.parse(state.endAt);
+    const status = !published ? '비공개' : now >= end ? '마감' : now < start ? '공개 예약 · 시작 전' : '공개 중';
+    const badge = get('enhypenTestStatus');
+    badge.textContent = status;
+    badge.classList.toggle('live', status === '공개 중');
+    pause.textContent = published ? '비공개로 전환' : '공개로 전환';
+    get('enhypenVisibilityNote').textContent = published
+      ? '공개 설정 · 공개. 지정한 기간에만 이용자가 조회할 수 있습니다.'
+      : '공개 설정 · 비공개. 관리자 미리보기만 가능합니다.';
+  }
+  const scheduleChanged = () => Boolean(state && (startAt.value !== kstInput(state.startAt) || endAt.value !== kstInput(state.endAt)));
 
   function setLoading(value) {
     loading = value;
     pause.disabled = loading || !state;
     refresh.disabled = loading;
     open.disabled = loading || !state;
+    startAt.disabled = endAt.disabled = get('enhypenScheduleSave').disabled = loading || !state;
     get('enhypenImport').querySelector('button').disabled = loading || !state;
     get('enhypenNumberForm').querySelectorAll('button').forEach(button => { button.disabled = loading; });
     panel.querySelectorAll('#enhypenTable button').forEach(button => { button.disabled = loading; });
@@ -90,8 +123,9 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
 
   function render(next) {
     state = next;
-    pause.textContent = state.open ? '발표 닫기' : '발표 공개';
-    get('enhypenTestStatus').textContent = state.open ? '공개 중' : '미공개';
+    startAt.value = kstInput(state.startAt);
+    endAt.value = kstInput(state.endAt);
+    renderAnnouncementStatus();
     get('enhypenPrimaryCount').textContent = state.winners.filter(row => row.selection === 'primary').length;
     get('enhypenReserveCount').textContent = state.winners.filter(row => row.selection === 'reserve').length;
     renderList();
@@ -143,7 +177,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
         add('방청 취소', () => { if (confirm(`${row.nickname} 님의 방청을 취소할까요?`)) void run({action:'withdraw', id:row.id}); });
       }
       if (kind === 'reserve') add('본 당첨 전환', () => editNumber(row, 'promote'));
-      if (!state.open) add('삭제', () => { if (confirm(`${row.nickname} 님을 명단에서 삭제할까요?`)) void run({action:'remove', id:row.id}); });
+      if (!state.published) add('삭제', () => { if (confirm(`${row.nickname} 님을 명단에서 삭제할까요?`)) void run({action:'remove', id:row.id}); });
       tr.append(actions);
       return tr;
     }));
@@ -179,18 +213,20 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     const id = ++operation;
     const token = getToken();
     setLoading(true);
-    const feedback = dialog.open ? get('enhypenNumberMessage') : message;
+    const feedback = dialog.open ? get('enhypenNumberMessage') : body.action === 'schedule' ? get('enhypenScheduleMessage') : message;
     feedback.textContent = '처리 중…';
+    feedback.classList.remove('error');
     try {
       if (body.action !== 'state') await request(body);
       const data = await request({action:'state'});
       if (!active || id !== operation || token !== getToken()) return;
       render(data);
-      success?.();
       feedback.textContent = '';
+      success?.();
     } catch (error) {
       if (id === operation && active) {
         feedback.textContent = error.message;
+        feedback.classList.add('error');
       }
     } finally {
       if (id === operation) setLoading(false);
@@ -200,6 +236,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   function leave() {
     ++operation;
     ++fingerOperation;
+    clearInterval(statusTimer);
     fingerModule?.unmountFingerAdmin();
     active = false;
     state = undefined;
@@ -227,10 +264,11 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     tab.setAttribute('aria-pressed', 'true');
     document.querySelectorAll('[data-program]').forEach(button => button.setAttribute('aria-pressed', 'false'));
     await run({action:'state'});
+    if (active) statusTimer = setInterval(renderAnnouncementStatus, 30000);
   };
   fingerTab.onclick = async () => {
     if (!fingerPanel.hidden || !getToken() || !await beforeSwitch()) return;
-    if (active && input.value.trim() && !confirm('저장하지 않은 엔하이픈 명단을 버리고 이동할까요?')) return;
+    if (!confirmLeave()) return;
     const token = getToken();
     leave();
     const requestId = ++fingerOperation;
@@ -246,10 +284,28 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     }
   };
   pause.onclick = () => {
-    if (!state.open && !confirm('발표를 공개할까요? 링크를 아는 당첨자는 지금부터 결과를 확인할 수 있습니다.')) return;
-    void run({action:'visibility', open:!state.open});
+    if (!state) return;
+    if (scheduleChanged()) { get('enhypenScheduleMessage').textContent = '변경한 발표 기간을 먼저 저장해 주세요.'; get('enhypenScheduleMessage').classList.add('error'); return; }
+    if (!state.published && !confirm('공개로 전환할까요? 지정한 발표 기간 동안 링크를 아는 당첨자가 결과를 확인할 수 있습니다.')) return;
+    void run({action:'visibility', open:!state.published});
   };
-  refresh.onclick = () => run({action:'state'});
+  schedule.onsubmit = event => {
+    event.preventDefault();
+    const start = startAt.value;
+    const end = endAt.value;
+    const feedback = get('enhypenScheduleMessage');
+    if (!start || !end || !Number.isFinite(Date.parse(kstTimestamp(start))) || !Number.isFinite(Date.parse(kstTimestamp(end))) || Date.parse(kstTimestamp(start)) >= Date.parse(kstTimestamp(end))) {
+      feedback.textContent = errors.INVALID_WINDOW;
+      feedback.classList.add('error');
+      return;
+    }
+    feedback.classList.remove('error');
+    void run({action:'schedule', startAt:kstTimestamp(start), endAt:kstTimestamp(end)}, () => { feedback.textContent = '발표 기간을 저장했습니다.'; });
+  };
+  refresh.onclick = () => {
+    if (scheduleChanged() && !confirm('저장하지 않은 발표 기간 변경을 버리고 새로고침할까요?')) return;
+    void run({action:'state'});
+  };
   open.onclick = () => { location.assign('../enhypen/'); };
   kindButtons.forEach(button => { button.onclick = () => {
     if (!state || loading || kind === button.dataset.enhypenKind) return;
@@ -286,8 +342,13 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
   get('enhypenCsv').onclick = () => download([['가입 이메일','닉네임','개인 당첨 번호','정보 등록 상태','이름','생년월일','국적','연락처','번호 구분','방청 안내용 이메일','X 계정'],...visibleRows().map(row => [row.email,row.nickname,row.winner_number,row.consent?'등록 완료':'미등록',...registrationValues(row)])],`enhypen-${kind}.csv`);
   get('enhypenWeverseCsv').onclick = () => download([['이름','연락처','개인 당첨 번호'],...state.winners.filter(row => row.selection === 'primary' && row.consent).map(row => [row.consent.legal_name,row.consent.phone,row.winner_number])],'enhypen-weverse.csv');
 
+  function confirmLeave() {
+    return !active || (!input.value.trim() && !scheduleChanged()) || confirm('저장하지 않은 엔하이픈 명단 또는 발표 기간을 버리고 이동할까요?');
+  }
+
   return {
     leave,
+    confirmLeave,
     get active() { return active || !fingerPanel.hidden; },
     hide() { tab.hidden = true; leave(); },
     async enable() {

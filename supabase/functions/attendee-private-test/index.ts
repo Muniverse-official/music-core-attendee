@@ -4,10 +4,10 @@ import { wideBanner } from './wide-banner.ts';
 import { countryCodes } from './registration-countries.ts';
 
 const origin = 'https://muniverse-official.github.io';
-const revision = 'enhypen-alphanumeric-winner-numbers-1';
+const revision = 'enhypen-announcement-schedule-1';
 const noticeVersion = '2026-11-13-v2';
 const languages = ['ko','en','ja','zh-TW','zh-CN'];
-const showEnd = '2026-11-26T00:00:00+09:00';
+const legacyShowEnd = '2026-11-26T00:00:00+09:00';
 
 class RequestError extends Error {
   readonly status: number;
@@ -87,14 +87,27 @@ function winnerNumber(value: unknown) {
   return number;
 }
 
+async function announcement() {
+  const [row] = await db('enhypen_announcement?id=eq.true&select=is_open,start_at,end_at');
+  const startAt = row?.start_at ?? null;
+  const endAt = row?.end_at ?? legacyShowEnd;
+  const published = row?.is_open === true;
+  const now = Date.now();
+  return {startAt, endAt, published, open:published && (!startAt || now >= Date.parse(startAt)) && now < Date.parse(endAt)};
+}
+
 async function openStatus() {
-  if (Date.now() >= Date.parse(showEnd)) return false;
-  const [row] = await db('enhypen_announcement?id=eq.true&select=is_open');
-  return row?.is_open === true;
+  return (await announcement()).open;
+}
+
+function scheduleTime(value: unknown) {
+  if (typeof value !== 'string' || !/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])T(?:[01]\d|2[0-3]):[0-5]\d:00\+09:00$/.test(value)) throw new RequestError(400,'INVALID_WINDOW');
+  const time = Date.parse(value);
+  if (!Number.isFinite(time) || new Date(time + 9 * 3600000).toISOString().slice(0,19) !== value.slice(0,19)) throw new RequestError(400,'INVALID_WINDOW');
+  return value;
 }
 
 async function lookup(req: Request, body: Record<string, unknown>) {
-  if (Date.now() >= Date.parse(showEnd)) throw new RequestError(403, 'ANNOUNCEMENT_CLOSED');
   const preview = !await openStatus();
   if (preview) {
     if (!req.headers.has('authorization')) throw new RequestError(403, 'ANNOUNCEMENT_CLOSED');
@@ -146,7 +159,7 @@ async function throttle(req: Request) {
 }
 
 async function consent(req: Request, body: Record<string, unknown>) {
-  if (Date.now() >= Date.parse(showEnd)) throw new RequestError(403,'ANNOUNCEMENT_CLOSED');
+  if (!await openStatus()) throw new RequestError(403,'ANNOUNCEMENT_CLOSED');
   if (body.agreed !== true || body.collectionAgreed !== true || body.version !== noticeVersion || !languages.includes(String(body.language))) throw new RequestError(400,'INVALID_FIELDS');
   const {hash,preview} = await registrationTicket(req,body.ticket);
   if (preview) throw new RequestError(403,'ANNOUNCEMENT_CLOSED');
@@ -178,14 +191,13 @@ Deno.serve(async req => {
     try { body = JSON.parse(text); } catch { throw new RequestError(400, 'INVALID_REQUEST'); }
     const action = body?.action;
     if (action === 'preview') {
-      const isOpen = await openStatus();
-      const preview = !isOpen && Date.now() < Date.parse(showEnd) && req.headers.has('authorization');
+      const {open:isOpen} = await announcement();
+      const preview = !isOpen && req.headers.has('authorization');
       if (preview) await authorize(req);
       return respond(req, {ok:true, open:isOpen, preview, ...(isOpen || preview ? {banner:body.artwork === 'wide' ? wideBanner : banner} : {})});
     }
     if (action === 'lookup') return respond(req, {ok:true, ...(await lookup(req, body))});
     if (action === 'registration') {
-      if (Date.now() >= Date.parse(showEnd)) throw new RequestError(403,'ANNOUNCEMENT_CLOSED');
       const {hash,preview} = await registrationTicket(req,body.ticket);
       const result = await resultFor(hash,preview,true);
       if (result.selection === 'none') throw new RequestError(403,'WINNER_MISSING');
@@ -195,10 +207,10 @@ Deno.serve(async req => {
 
     await authorize(req);
     if (action === 'state') {
-      const [open, rows, consents] = await Promise.all([openStatus(), db('enhypen_winner_list?select=id,email,nickname,pii_box,selection,winner_number,consent_deadline&order=created_at.asc,id.asc'),db(`enhypen_winner_consent?notice_version=eq.${noticeVersion}&select=winner_id,pii_box,legal_name,phone,agreed_at,birth_date,contact_email,nationality,phone_mode,x_account`)]);
+      const [status, rows, consents] = await Promise.all([announcement(), db('enhypen_winner_list?select=id,email,nickname,pii_box,selection,winner_number,consent_deadline&order=created_at.asc,id.asc'),db(`enhypen_winner_consent?notice_version=eq.${noticeVersion}&select=winner_id,pii_box,legal_name,phone,agreed_at,birth_date,contact_email,nationality,phone_mode,x_account`)]);
       const byWinner = new Map(consents.map((row:Record<string, unknown>) => [row.winner_id,row]));
       const winners = rows.map((row:Record<string, unknown>) => ({...row,consent:byWinner.get(row.id) ?? null}));
-      return respond(req, {ok:true, open, winners, title:'3. 엔하이픈 특집쇼'});
+      return respond(req, {ok:true, ...status, winners, title:'3. 엔하이픈 특집쇼'});
     }
 
     let data;
@@ -209,6 +221,11 @@ Deno.serve(async req => {
       data = {selection:body.selection, rows};
     } else if (action === 'visibility' && typeof body.open === 'boolean') {
       data = {open:body.open};
+    } else if (action === 'schedule') {
+      const startAt = scheduleTime(body.startAt);
+      const endAt = scheduleTime(body.endAt);
+      if (Date.parse(startAt) >= Date.parse(endAt)) throw new RequestError(400,'INVALID_WINDOW');
+      data = {startAt, endAt};
     } else if (['promote','number','withdraw','remove'].includes(action)) {
       const id = clean(body.id, 36);
       if (!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id)) throw new RequestError(400,'INVALID_FIELDS');
@@ -216,7 +233,7 @@ Deno.serve(async req => {
       if (action === 'promote' && body.deadline) {
         const deadline = clean(body.deadline, 40);
         const time = Date.parse(deadline);
-        if (!/^2026-11-\d{2}T\d{2}:\d{2}:00\+09:00$/.test(deadline) || !Number.isFinite(time) || time <= Date.now() || time >= Date.parse(showEnd)) throw new RequestError(400,'INVALID_DEADLINE');
+        if (!/^2026-11-\d{2}T\d{2}:\d{2}:00\+09:00$/.test(deadline) || !Number.isFinite(time) || time <= Date.now() || time >= Date.parse(legacyShowEnd)) throw new RequestError(400,'INVALID_DEADLINE');
         data = {...data, deadline};
       }
     } else {
