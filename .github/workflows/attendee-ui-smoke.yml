@@ -31,7 +31,7 @@ jobs:
       - name: Install pinned browser test dependency
         run: npm install --no-save --package-lock=false playwright@1.55.0
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
       - name: Check admin login and latest-round UI
         run: node tools/admin-ui-smoke.mjs
       - name: Check scoped admin loading and paging
