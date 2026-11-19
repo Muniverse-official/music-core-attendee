@@ -4,7 +4,7 @@ import { wideBanner } from './wide-banner.ts';
 import { countryCodes } from './registration-countries.ts';
 
 const origin = 'https://muniverse-official.github.io';
-const revision = 'enhypen-reserve-registration-1';
+const revision = 'enhypen-alphanumeric-winner-numbers-1';
 const noticeVersion = '2026-11-13-v2';
 const languages = ['ko','en','ja','zh-TW','zh-CN'];
 const showEnd = '2026-11-26T00:00:00+09:00';
@@ -82,8 +82,8 @@ async function identity(row: Record<string, unknown>) {
 }
 
 function winnerNumber(value: unknown) {
-  const number = clean(value, 16);
-  if (!/^\d{1,16}$/.test(number)) throw new RequestError(400,'INVALID_NUMBER');
+  const number = clean(value, 16).toUpperCase();
+  if (!/^[A-Z0-9]{1,16}$/.test(number)) throw new RequestError(400,'INVALID_NUMBER');
   return number;
 }
 
