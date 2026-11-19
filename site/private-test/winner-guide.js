@@ -1,7 +1,7 @@
 const winnerGuide = {
   ko: {
     guideTitle:'당첨자 방청 안내', guideDate:'2026년 11월 25일(수) · 한국시간(KST)', guideVenue:'상암 MBC 미디어센터 1층 공개홀',
-    guideSchedule:['본인 확인 · 당첨번호 451~500번','재모임 및 입장 대기','입장 및 착석','본 녹화'],
+    guideSchedule:['본인 확인','재모임 및 입장 대기','입장 및 착석','본 녹화'],
     guideSections:[
       ['본인 확인 준비물',[
         '본인 확인이 가능한 사진이 있는 아래 신분증과 당첨 안내 문자 또는 별도 안내 메시지를 지참해 주세요. 신분증이 없거나 본인 확인이 어려운 경우 입장이 제한될 수 있습니다.',
@@ -23,7 +23,7 @@ const winnerGuide = {
   },
   en: {
     guideTitle:'Attendance guide for winners', guideDate:'Wednesday, November 25, 2026 · Korea Standard Time (KST)', guideVenue:'Public Hall, 1F, MBC Media Center, Sangam',
-    guideSchedule:['Identity check · Winner numbers 451–500','Regroup and wait for entry','Entry and seating','Show recording'],
+    guideSchedule:['Identity check','Regroup and wait for entry','Entry and seating','Show recording'],
     guideSections:[
       ['What to bring for check-in',[
         'Bring an accepted photo ID listed below and your winner notification by text or another official message. You may be denied entry if you do not have ID or staff cannot verify your identity.',
@@ -45,7 +45,7 @@ const winnerGuide = {
   },
   ja: {
     guideTitle:'当選者向け観覧案内', guideDate:'2026年11月25日（水）・韓国標準時（KST）', guideVenue:'上岩MBCメディアセンター1階 公開ホール',
-    guideSchedule:['本人確認（当選番号451～500番）','再集合・入場待機','入場・着席','本収録'],
+    guideSchedule:['本人確認','再集合・入場待機','入場・着席','本収録'],
     guideSections:[
       ['本人確認に必要なもの',[
         '下記の顔写真付き本人確認書類と、当選を知らせるSMSまたは別途の案内メッセージをご持参ください。書類がない場合や本人確認ができない場合は、入場できないことがあります。',
@@ -67,7 +67,7 @@ const winnerGuide = {
   },
   'zh-TW': {
     guideTitle:'中選者觀賞指南', guideDate:'2026 年 11 月 25 日（星期三）· 韓國標準時間（KST）', guideVenue:'上岩 MBC 媒體中心 1 樓公開錄影廳',
-    guideSchedule:['身分核對（中選編號 451–500）','再次集合及等候入場','入場及就座','正式錄影'],
+    guideSchedule:['身分核對','再次集合及等候入場','入場及就座','正式錄影'],
     guideSections:[
       ['身分核對必備文件',[
         '請攜帶下列任一附照片的有效身分證明文件，以及中選簡訊或另行發送的通知。未攜帶文件或無法核對身分時，可能無法入場。',
@@ -89,7 +89,7 @@ const winnerGuide = {
   },
   'zh-CN': {
     guideTitle:'入选者观看指南', guideDate:'2026 年 11 月 25 日（星期三）· 韩国标准时间（KST）', guideVenue:'上岩 MBC 媒体中心 1 楼公开录制厅',
-    guideSchedule:['身份核验（入选编号 451–500）','再次集合及等候入场','入场及就座','正式录制'],
+    guideSchedule:['身份核验','再次集合及等候入场','入场及就座','正式录制'],
     guideSections:[
       ['身份核验所需证件',[
         '请携带以下任一附照片的有效身份证明，以及入选短信或另行发送的通知。未携带证件或无法核验身份时，可能无法入场。',

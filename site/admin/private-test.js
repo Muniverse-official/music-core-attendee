@@ -340,7 +340,7 @@ function createEnhypenAdmin({getToken, onExpired, beforeSwitch}) {
     const anchor = document.createElement('a'); anchor.href=url; anchor.download=filename; anchor.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
   }
   get('enhypenCsv').onclick = () => download([['가입 이메일','닉네임','개인 당첨 번호','정보 등록 상태','이름','생년월일','국적','연락처','번호 구분','방청 안내용 이메일','X 계정'],...visibleRows().map(row => [row.email,row.nickname,row.winner_number,row.consent?'등록 완료':'미등록',...registrationValues(row)])],`enhypen-${kind}.csv`);
-  get('enhypenWeverseCsv').onclick = () => download([['이름','연락처','개인 당첨 번호'],...state.winners.filter(row => row.selection === 'primary' && row.consent).map(row => [row.consent.legal_name,row.consent.phone,row.winner_number])],'enhypen-weverse.csv');
+  get('enhypenWeverseCsv').onclick = () => download([['이름','생년월일','연락처','개인 당첨 번호'],...state.winners.filter(row => row.selection === 'primary' && row.consent).map(row => [row.consent.legal_name,row.consent.birth_date,row.consent.phone,row.winner_number])],'enhypen-weverse.csv');
 
   function confirmLeave() {
     return !active || (!input.value.trim() && !scheduleChanged()) || confirm('저장하지 않은 엔하이픈 명단 또는 발표 기간을 버리고 이동할까요?');

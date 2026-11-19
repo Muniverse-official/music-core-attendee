@@ -21,3 +21,4 @@ main,main:has(.art[hidden]){display:block;width:min(100%,46rem);min-height:0;mar
 .registration-page #reserve-notice,.registration-page #phone-hint{white-space:pre-line;word-break:keep-all;overflow-wrap:break-word;line-height:1.65}
 .registration-page #reserve-notice{font-size:.92rem;font-weight:650}
 .registration-page #phone-hint{font-size:.86rem;margin:.65rem 0 .35rem}
+.registration-page .eligibility-notice{margin:.35rem 0 .8rem;color:var(--muted);font-size:.84rem;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere}

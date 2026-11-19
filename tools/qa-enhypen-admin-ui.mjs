@@ -11,7 +11,7 @@ const host = 'https://muniverse-official.github.io';
 const origin = 'https://kkaoerbblpuszptiibvo.supabase.co';
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || (existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
 const browser = await chromium.launch({headless:true, executablePath});
-const context = await browser.newContext();
+const context = await browser.newContext({acceptDownloads:true});
 const page = await context.newPage();
 const errors = [], requests = [];
 page.on('pageerror', error => errors.push(error.message));
@@ -22,6 +22,7 @@ const current = {
   startAt:'2026-11-20T09:00:00+09:00',
   endAt:'2026-11-22T09:00:00+09:00',
 };
+const winners = [{id:'11111111-1111-4111-8111-111111111111',email:'synthetic@example.invalid',nickname:'Synthetic',selection:'primary',winner_number:'M1',consent:null}];
 const fixedNow = Date.parse('2026-11-19T09:00:00Z');
 const respond = (route, body) => route.fulfill({status:200, contentType:'application/json',headers:{'access-control-allow-origin':host},body:JSON.stringify(body)});
 const preflight = route => route.fulfill({status:204,headers:{'access-control-allow-origin':host,'access-control-allow-headers':'authorization,content-type,x-admin-request','access-control-allow-methods':'POST,OPTIONS'}});
@@ -60,7 +61,7 @@ await context.route(origin+'/functions/v1/attendee-private-test', route => {
   }
   assert.equal(body.action,'state');
   const open=current.published && fixedNow >= Date.parse(current.startAt) && fixedNow < Date.parse(current.endAt);
-  return respond(route,{ok:true,open,published:current.published,startAt:current.startAt,endAt:current.endAt,winners:[{id:'11111111-1111-4111-8111-111111111111',email:'synthetic@example.invalid',nickname:'Synthetic',selection:'primary',winner_number:'M1',consent:null}]});
+  return respond(route,{ok:true,open,published:current.published,startAt:current.startAt,endAt:current.endAt,winners});
 });
 
 const actions = action => requests.filter(request => request.action===action);
@@ -125,6 +126,18 @@ try {
   await page.click('#enhypenTestPause');
   await status('비공개');
   assert.deepEqual(actions('visibility').at(-1),{action:'visibility',open:false});
+
+  // The Weverse handoff includes birth date only for consenting primary winners.
+  winners.push({id:'22222222-2222-4222-8222-222222222222',email:'consented@example.invalid',nickname:'Consented',selection:'primary',winner_number:'M2',consent:{legal_name:'Synthetic Name',birth_date:'2001-02-03',phone:'01012345678'}});
+  winners.push({id:'33333333-3333-4333-8333-333333333333',email:'reserve@example.invalid',nickname:'Reserve',selection:'reserve',winner_number:null,consent:{legal_name:'Reserve Name',birth_date:'2002-03-04',phone:'01087654321'}});
+  await page.click('#enhypenTestRefresh');
+  await page.waitForFunction(()=>document.querySelector('#enhypenPrimaryCount')?.textContent==='2');
+  const downloaded=page.waitForEvent('download');
+  await page.click('#enhypenWeverseCsv');
+  const csv=await readFile(await (await downloaded).path(),'utf8');
+  assert.match(csv,/"이름","생년월일","연락처","개인 당첨 번호"/);
+  assert.match(csv,/"Synthetic Name","2001-02-03","01012345678","M2"/);
+  assert.doesNotMatch(csv,/Reserve Name|synthetic@example.invalid/);
   assert.deepEqual(errors,[]);
   console.log('PASS ENHYPEN admin KST schedule, separate publication, status transitions, unsaved guard');
 } finally {

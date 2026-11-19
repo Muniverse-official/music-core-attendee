@@ -76,12 +76,21 @@ assert.equal((await call({action:'preview'})).open,true);
 const result = await call({action:'lookup',email:winner.email,nickname:winner.nickname});
 assert.equal(result.number,'M1');
 assert(result.ticket);
+const consentFields = {
+  action:'consent', ticket:result.ticket, agreed:true, collectionAgreed:true,
+  language:'ko', name:'Synthetic Winner', phoneMode:'KR', phone:'01012345678',
+  birthDate:'2000-01-01', nationality:'KR', contactEmail:'fan@example.invalid',
+  xAccount:'@synthetic',
+};
+await call({...consentFields,version:'2026-11-13-v2'},false,400,'INVALID_FIELDS');
+await call({...consentFields,version:'2026-11-19-v3'});
+assert.equal(calls.filter(item=>item.path==='rpc/enhypen_record_consent_v2').at(-1).payload.p_version,'2026-11-19-v3');
 
 // An existing lookup ticket cannot submit after the cutoff or while private.
 now = Date.parse(endAt);
 assert.equal((await call({action:'preview'})).open,false);
 await call({action:'lookup',email:winner.email,nickname:winner.nickname},false,403,'ANNOUNCEMENT_CLOSED');
-await call({action:'consent',ticket:result.ticket,agreed:true,collectionAgreed:true,version:'2026-11-13-v2',language:'ko'},false,403,'ANNOUNCEMENT_CLOSED');
+await call({...consentFields,version:'2026-11-19-v3'},false,403,'ANNOUNCEMENT_CLOSED');
 now = Date.parse('2026-11-20T09:10:00+09:00');
 await call({action:'visibility',open:false},true);
 state = await call({action:'state'},true);

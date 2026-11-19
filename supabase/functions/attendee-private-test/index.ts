@@ -4,8 +4,8 @@ import { wideBanner } from './wide-banner.ts';
 import { countryCodes } from './registration-countries.ts';
 
 const origin = 'https://muniverse-official.github.io';
-const revision = 'enhypen-primary-capacity-1';
-const noticeVersion = '2026-11-13-v2';
+const revision = 'enhypen-weverse-birth-date-consent-1';
+const noticeVersion = '2026-11-19-v3';
 const languages = ['ko','en','ja','zh-TW','zh-CN'];
 const legacyShowEnd = '2026-11-26T00:00:00+09:00';
 

@@ -105,7 +105,7 @@ form.onsubmit = async event => {
     await request({action:'consent',ticket,name:byId('legal-name').value,phoneMode,
       phone:byId(phoneMode==='KR'?'korean-phone':'intl-phone').value,birthDate:byId('birth-date').value,
       contactEmail:byId('contact-email').value,nationality:form.elements['nationality-mode'].value==='KR'?'KR':country.value,
-      xAccount:byId('x-account').value,language:lang.value,collectionAgreed:checkboxes[0].checked,agreed:checkboxes[1].checked,version:'2026-11-13-v2'});
+      xAccount:byId('x-account').value,language:lang.value,collectionAgreed:checkboxes[0].checked,agreed:checkboxes[1].checked,version:'2026-11-19-v3'});
     winner.agreed=true;
     form.reset();
   } catch (error) {
