@@ -89,7 +89,7 @@ async function openRegistration() {
     if (winner.contactEmail) byId('contact-email').value = winner.contactEmail;
     void request({action:'preview'},true).then(showPoster).catch(()=>{});
   } catch (error) {
-    gateKey=error.message==='ANNOUNCEMENT_CLOSED' ? 'closed' : ['SESSION_EXPIRED','UNAUTHORIZED','WINNER_MISSING'].includes(error.message) ? 'registrationExpired' : 'failed';
+    gateKey=error.message==='ANNOUNCEMENT_CLOSED' ? await closedGate() : ['SESSION_EXPIRED','UNAUTHORIZED','WINNER_MISSING'].includes(error.message) ? 'registrationExpired' : 'failed';
   }
   render();
 }

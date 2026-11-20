@@ -25,7 +25,7 @@ async function openLookup() {
       data = await request({action:'preview'});
     }
     preview = data.preview === true;
-    gateKey = data.open ? '' : preview ? 'preview' : 'closed';
+    gateKey = data.open ? '' : preview ? 'preview' : data.ended ? 'announcementEnded' : 'closed';
     form.hidden = !data.open && !preview;
     showPoster(data);
   } catch { gateKey = 'failed'; }
@@ -51,7 +51,7 @@ form.onsubmit = async event => {
     resultKey = data.selection;
   } catch (error) {
     if (error.message === 'ANNOUNCEMENT_CLOSED' || ['UNAUTHORIZED','SESSION_EXPIRED'].includes(error.message)) {
-      gateKey = error.message === 'ANNOUNCEMENT_CLOSED' ? 'closed' : 'previewExpired';
+      gateKey = error.message === 'ANNOUNCEMENT_CLOSED' ? await closedGate() : 'previewExpired';
       form.hidden = true;
       byId('art').hidden = true;
       form.reset();

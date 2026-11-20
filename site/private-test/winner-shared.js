@@ -39,3 +39,10 @@ function showPoster(data) {
   byId('banner').src = data.banner;
   byId('art').hidden = false;
 }
+
+async function closedGate() {
+  try {
+    const status = await request({action:'preview'});
+    return status.ended ? 'announcementEnded' : 'closed';
+  } catch { return 'failed'; }
+}

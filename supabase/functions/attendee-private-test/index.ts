@@ -93,7 +93,7 @@ async function announcement() {
   const endAt = row?.end_at ?? legacyShowEnd;
   const published = row?.is_open === true;
   const now = Date.now();
-  return {startAt, endAt, published, open:published && (!startAt || now >= Date.parse(startAt)) && now < Date.parse(endAt)};
+  return {startAt, endAt, published, ended:published && now >= Date.parse(endAt), open:published && (!startAt || now >= Date.parse(startAt)) && now < Date.parse(endAt)};
 }
 
 async function openStatus() {
@@ -191,10 +191,10 @@ Deno.serve(async req => {
     try { body = JSON.parse(text); } catch { throw new RequestError(400, 'INVALID_REQUEST'); }
     const action = body?.action;
     if (action === 'preview') {
-      const {open:isOpen} = await announcement();
+      const {open:isOpen, ended} = await announcement();
       const preview = !isOpen && req.headers.has('authorization');
       if (preview) await authorize(req);
-      return respond(req, {ok:true, open:isOpen, preview, ...(isOpen || preview ? {banner:body.artwork === 'wide' ? wideBanner : banner} : {})});
+      return respond(req, {ok:true, open:isOpen, ended, preview, ...(isOpen || preview ? {banner:body.artwork === 'wide' ? wideBanner : banner} : {})});
     }
     if (action === 'lookup') return respond(req, {ok:true, ...(await lookup(req, body))});
     if (action === 'registration') {
